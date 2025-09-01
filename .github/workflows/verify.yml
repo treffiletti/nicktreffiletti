@@ -1,0 +1,81 @@
+name: Verify Production Routing
+
+on:
+  workflow_dispatch:
+    inputs:
+      primary_host:
+        description: Canonical host (must include www if that’s your primary)
+        default: www.nicktreffiletti.com
+      redirect_hosts:
+        description: Comma-separated hosts that should 301 -> primary
+        default: nicktreffiletti.com,nicholastreffiletti.com,www.nicholastreffiletti.com
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check homepage 200
+        id: home
+        run: |
+          set -e
+          PH="${{ github.event.inputs.primary_host }}"
+          code=$(curl -sS -o /dev/null -w "%{http_code}" "https://$PH/")
+          echo "home_status=$code" >> $GITHUB_OUTPUT
+          [[ "$code" == "200" ]] || { echo "❌ Home not 200 ($code)"; exit 1; }
+          echo "✅ Home 200 at https://$PH/"
+
+      - name: Check sitemap, robots, feed
+        id: files
+        run: |
+          set -e
+          PH="${{ github.event.inputs.primary_host }}"
+          for path in sitemap.xml robots.txt feed.xml; do
+            url="https://$PH/$path"
+            code=$(curl -sS -o /dev/null -w "%{http_code}" "$url")
+            [[ "$code" == "200" ]] || { echo "❌ $path not 200 ($code) at $url"; exit 1; }
+            echo "✅ $path 200"
+          done
+
+      - name: Check 301 redirects -> primary
+        id: redirects
+        run: |
+          set -e
+          PH="${{ github.event.inputs.primary_host }}"
+          IFS=',' read -ra HOSTS <<< "${{ github.event.inputs.redirect_hosts }}"
+          for h in "${HOSTS[@]}"; do
+            h=$(echo "$h" | xargs) # trim
+            [[ -n "$h" ]] || continue
+            # Use -I (HEAD) and -L off; read Location
+            headers=$(curl -sSI "https://$h/" || true)
+            code=$(printf "%s" "$headers" | awk 'toupper($1$2)== "HTTP/2" {print $2; exit}')
+            loc=$(printf "%s" "$headers" | awk -F': ' 'tolower($1)=="location"{print $2; exit}' | tr -d '\r')
+            expected="https://$PH/"
+            if [[ "$code" != "301" || "$loc" != "$expected" ]]; then
+              echo "❌ Redirect check failed for https://$h/"
+              echo "   Got: $code -> $loc"
+              echo "   Want: 301 -> $expected"
+              exit 1
+            fi
+            echo "✅ $h 301 -> $expected"
+          done
+
+      - name: Check canonical tag on homepage
+        id: canonical
+        run: |
+          set -e
+          PH="${{ github.event.inputs.primary_host }}"
+          html=$(curl -sS "https://$PH/")
+          echo "$html" | grep -Eio '<link[^>]+rel=["'\'']canonical["'\''][^>]*>' > canon.txt || true
+          if ! grep -qi "href=['\"']https://$PH/" canon.txt; then
+            echo "❌ Canonical tag missing or wrong. Expected to include https://$PH/"
+            echo "Found:"
+            cat canon.txt || true
+            exit 1
+          fi
+          echo "✅ Canonical tag points to https://$PH/"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Primary:  https://${{ github.event.inputs.primary_host }}/"
+          echo "Redirects: ${{ github.event.inputs.redirect_hosts }}"
