@@ -1,25 +1,27 @@
 import './global.css'
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Navbar } from './components/nav'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import Footer from './components/footer'
+import { SITE_URL } from '../lib/site'
 import { baseUrl } from './sitemap'
 
 export const metadata: Metadata = {
-  metadataBase: new URL(baseUrl),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Next.js Portfolio Starter',
-    template: '%s | Next.js Portfolio Starter',
+    default: 'Nick Treffiletti — Platform Architecture & Engineering',
+    template: '%s | Nick Treffiletti — Platform Architecture & Engineering',
   },
-  description: 'This is my portfolio.',
+  description: 'Opinionated essays on platform architecture, developer platforms, and cloud‑native ops.',
   openGraph: {
-    title: 'My Portfolio',
-    description: 'This is my portfolio.',
+    title: 'Nick Treffiletti — Platform Architecture & Engineering',
+    description: 'Opinionated essays on platform architecture, developer platforms, and cloud‑native ops.',
     url: baseUrl,
-    siteName: 'My Portfolio',
+    siteName: 'Nick Treffiletti — Platform Architecture & Engineering',
     locale: 'en_US',
     type: 'website',
   },
@@ -53,6 +55,19 @@ export default function RootLayout({
       )}
     >
       <body className="antialiased max-w-xl mx-4 mt-8 lg:mx-auto">
+        <Script
+          id="person-jsonld"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Person",
+              "name": "Nick Treffiletti",
+              "alternateName": "Nicholas Treffiletti",
+              "url": SITE_URL,
+            }),
+          }}
+        />
         <main className="flex-auto min-w-0 mt-6 flex flex-col px-2 md:px-0">
           <Navbar />
           {children}
