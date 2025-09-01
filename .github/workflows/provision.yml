@@ -1,0 +1,49 @@
+name: Provision Vercel + Domains
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: Vercel project name
+        default: nick-site
+      primary_host:
+        description: Canonical host (www recommended)
+        default: www.nicktreffiletti.com
+      redirect_hosts:
+        description: Comma-separated hosts to 301 -> primary
+        default: nicktreffiletti.com,nicholastreffiletti.com,www.nicholastreffiletti.com
+      godaddy_domains:
+        description: Comma-separated apex domains to manage (DNS)
+        default: nicholastreffiletti.com
+      apex_ip:
+        description: Apex A-record target (leave default unless Vercel UI tells you otherwise)
+        default: 76.76.21.21
+      cname_target:
+        description: www CNAME target (leave default or paste dynamic one from Vercel UI)
+        default: cname.vercel-dns.com
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm i -D @vercel/sdk
+
+      - name: Run provisioner
+        run: node scripts/provision.mjs
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          PROJECT_NAME: ${{ github.event.inputs.project_name }}
+          PRIMARY_HOST: ${{ github.event.inputs.primary_host }}
+          REDIRECT_HOSTS: ${{ github.event.inputs.redirect_hosts }}
+          GODADDY_KEY: ${{ secrets.GODADDY_KEY }}
+          GODADDY_SECRET: ${{ secrets.GODADDY_SECRET }}
+          GODADDY_DOMAINS: ${{ github.event.inputs.godaddy_domains }}
+          APEX_IP: ${{ github.event.inputs.apex_ip }}
+          CNAME_TARGET: ${{ github.event.inputs.cname_target }}
