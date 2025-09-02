@@ -11,11 +11,7 @@ export default function Head() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        // IMPORTANT: raw JSON, not escaped
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </>
   );
 }
