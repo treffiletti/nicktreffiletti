@@ -1,0 +1,46 @@
+name: SEO smoke
+on:
+  schedule: [{ cron: "17 7 * * *" }] # daily 07:17 UTC
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify redirects + assets
+        run: |
+          set -euo pipefail
+
+          canon="https://www.nicktreffiletti.com/"
+          assert_redirect () {
+            src="$1"
+            loc=$(curl -sI "$src" | awk -F': ' 'tolower($1)=="location"{print $2}' | tr -d '\r')
+            if [ "$loc" != "$canon" ]; then
+              echo "❌ $src -> $loc (expected $canon)"; exit 1
+            else
+              echo "✅ $src -> $loc"
+            fi
+          }
+
+          assert_200 () {
+            url="$1"
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+            if [ "$code" != "200" ]; then
+              echo "❌ $url -> $code"; exit 1
+            else
+              echo "✅ $url -> 200"
+            fi
+          }
+
+          # 301/308s
+          assert_redirect "https://nicktreffiletti.com/"
+          assert_redirect "https://nicholastreffiletti.com/"
+          assert_redirect "https://www.nicholastreffiletti.com/"
+
+          # must-serve endpoints
+          assert_200 "$canon"
+          assert_200 "${canon}sitemap.xml"
+          assert_200 "${canon}robots.txt"
+          # RSS (either path acceptable)
+          curl -sI "${canon}rss" | head -n1 | grep -q "200" || { echo "❌ /rss not 200"; exit 1; }
+          echo "✅ /rss -> 200"
