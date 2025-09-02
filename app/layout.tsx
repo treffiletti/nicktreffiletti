@@ -86,6 +86,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
 
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Person",
+              "@id": `${SITE_URL}/#person`,
+              name: "Nick Treffiletti",
+              alternateName: "Nicholas Treffiletti",
+              url: SITE_URL,
+              sameAs: [
+                "https://linkedin.com/in/nicktreffiletti",
+                "https://github.com/treffiletti",
+                "https://medium.com/@newyorknick",
+              ],
+            }),
+          }}
+        />
+
         <header>
           <Navbar />
         </header>
