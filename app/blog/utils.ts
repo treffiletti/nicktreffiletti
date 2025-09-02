@@ -4,7 +4,9 @@ import path from 'path'
 type Metadata = {
   title: string
   publishedAt: string
-  summary: string
+  description: string
+  tags: string[]
+  draft: boolean
   image?: string
 }
 
@@ -16,14 +18,57 @@ function parseFrontmatter(fileContent: string) {
   let frontMatterLines = frontMatterBlock.trim().split('\n')
   let metadata: Partial<Metadata> = {}
 
+  let currentKey = ''
+  let currentArray: string[] = []
+  let inArray = false
+
   frontMatterLines.forEach((line) => {
-    let [key, ...valueArr] = line.split(': ')
-    let value = valueArr.join(': ').trim()
-    value = value.replace(/^['"](.*)['"]$/, '$1') // Remove quotes
-    metadata[key.trim() as keyof Metadata] = value
+    if (line.trim().startsWith('- ')) {
+      // Array item
+      if (inArray) {
+        currentArray.push(line.trim().substring(2))
+      }
+    } else if (line.includes(': ')) {
+      // Finish previous array if we were in one
+      if (inArray && currentKey) {
+        metadata[currentKey as keyof Metadata] = currentArray as any
+        currentArray = []
+        inArray = false
+      }
+
+      let [key, ...valueArr] = line.split(': ')
+      let value = valueArr.join(': ').trim()
+      value = value.replace(/^['"](.*)['"]$/, '$1') // Remove quotes
+      currentKey = key.trim()
+      
+      if (value === '') {
+        // Next lines might be an array
+        inArray = true
+        currentArray = []
+      } else {
+        metadata[currentKey as keyof Metadata] = value as any
+      }
+    }
   })
 
-  return { metadata: metadata as Metadata, content }
+  // Handle final array if we ended with one
+  if (inArray && currentKey) {
+    metadata[currentKey as keyof Metadata] = currentArray as any
+  }
+
+  // Apply defaults
+  const defaults = {
+    title: '',
+    description: '',
+    publishedAt: '',
+    tags: [] as string[],
+    draft: false,
+    image: '',
+  }
+
+  const finalMetadata = { ...defaults, ...metadata }
+
+  return { metadata: finalMetadata as Metadata, content }
 }
 
 function getMDXFiles(dir) {
