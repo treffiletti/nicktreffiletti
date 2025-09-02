@@ -5,7 +5,7 @@ export const baseUrl = SITE_URL
 
 export default async function sitemap() {
   let blogs = getBlogPosts()
-    .filter((post) => !post.metadata.draft)
+    .filter((post) => post.metadata.draft !== true)
     .map((post) => ({
       url: `${baseUrl}/blog/${post.slug}`,
       lastModified: post.metadata.publishedAt,
