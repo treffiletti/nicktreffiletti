@@ -1,6 +1,5 @@
 import "./global.css";
 import type { Metadata } from "next";
-import Script from "next/script";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Navbar } from "./components/nav";
@@ -55,10 +54,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={cx("text-black bg-white dark:text-white dark:bg-black", GeistSans.variable, GeistMono.variable)}>
       <body className="antialiased max-w-xl mx-4 mt-8 lg:mx-auto">
-        <Script
-          id="person-jsonld"
+        <script
           type="application/ld+json"
-          strategy="beforeInteractive" // ensures it’s hoisted into <head> before hydration
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
