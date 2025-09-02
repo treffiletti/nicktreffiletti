@@ -4,26 +4,74 @@ import path from 'path'
 type Metadata = {
   title: string
   publishedAt: string
-  summary: string
+  description: string
+  tags: string[]
+  draft: boolean
   image?: string
 }
 
 function parseFrontmatter(fileContent: string) {
   let frontmatterRegex = /---\s*([\s\S]*?)\s*---/
   let match = frontmatterRegex.exec(fileContent)
-  let frontMatterBlock = match![1]
+  if (!match) {
+    throw new Error('No frontmatter found')
+  }
+  let frontMatterBlock = match[1]
   let content = fileContent.replace(frontmatterRegex, '').trim()
   let frontMatterLines = frontMatterBlock.trim().split('\n')
   let metadata: Partial<Metadata> = {}
 
+  let currentKey = ''
+  let currentArray: string[] = []
+  let inArray = false
+
   frontMatterLines.forEach((line) => {
-    let [key, ...valueArr] = line.split(': ')
-    let value = valueArr.join(': ').trim()
-    value = value.replace(/^['"](.*)['"]$/, '$1') // Remove quotes
-    metadata[key.trim() as keyof Metadata] = value
+    if (line.trim().startsWith('- ')) {
+      // Array item
+      if (inArray) {
+        currentArray.push(line.trim().substring(2))
+      }
+    } else if (line.includes(': ')) {
+      // Finish previous array if we were in one
+      if (inArray && currentKey) {
+        metadata[currentKey as keyof Metadata] = currentArray as any
+        currentArray = []
+        inArray = false
+      }
+
+      let [key, ...valueArr] = line.split(': ')
+      let value = valueArr.join(': ').trim()
+      value = value.replace(/^['"](.*)['"]$/, '$1') // Remove quotes
+      currentKey = key.trim()
+      
+      if (value === '') {
+        // Next lines might be an array
+        inArray = true
+        currentArray = []
+      } else {
+        metadata[currentKey as keyof Metadata] = value as any
+      }
+    }
   })
 
-  return { metadata: metadata as Metadata, content }
+  // Handle final array if we ended with one
+  if (inArray && currentKey) {
+    metadata[currentKey as keyof Metadata] = currentArray as any
+  }
+
+  // Apply defaults
+  const defaults = {
+    title: '',
+    description: '',
+    publishedAt: '',
+    tags: [] as string[],
+    draft: false,
+    image: '',
+  }
+
+  const finalMetadata = { ...defaults, ...metadata }
+
+  return { metadata: finalMetadata as Metadata, content }
 }
 
 function getMDXFiles(dir) {
@@ -38,13 +86,31 @@ function readMDXFile(filePath) {
 function getMDXData(dir) {
   let mdxFiles = getMDXFiles(dir)
   return mdxFiles.map((file) => {
-    let { metadata, content } = readMDXFile(path.join(dir, file))
-    let slug = path.basename(file, path.extname(file))
+    try {
+      let { metadata, content } = readMDXFile(path.join(dir, file))
+      let slug = path.basename(file, path.extname(file))
 
-    return {
-      metadata,
-      slug,
-      content,
+      return {
+        metadata,
+        slug,
+        content,
+      }
+    } catch (error) {
+      console.error(`Error parsing ${file}:`, error)
+      // Return a safe fallback to prevent build failure
+      let slug = path.basename(file, path.extname(file))
+      return {
+        metadata: {
+          title: `Error: ${slug}`,
+          description: 'This post has malformed frontmatter',
+          publishedAt: new Date().toISOString().split('T')[0],
+          tags: [],
+          draft: true, // Mark as draft so it's filtered out
+          image: '',
+        },
+        slug,
+        content: 'This post could not be parsed due to malformed frontmatter.',
+      }
     }
   })
 }

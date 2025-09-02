@@ -6,9 +6,11 @@ import { baseUrl } from 'app/sitemap'
 export async function generateStaticParams() {
   let posts = getBlogPosts()
 
-  return posts.map((post) => ({
-    slug: post.slug,
-  }))
+  return posts
+    .filter((post) => !post.metadata.draft)
+    .map((post) => ({
+      slug: post.slug,
+    }))
 }
 
 export function generateMetadata({ params }) {
@@ -20,7 +22,7 @@ export function generateMetadata({ params }) {
   let {
     title,
     publishedAt: publishedTime,
-    summary: description,
+    description,
     image,
   } = post.metadata
   let ogImage = image
@@ -70,14 +72,14 @@ export default function Blog({ params }) {
             headline: post.metadata.title,
             datePublished: post.metadata.publishedAt,
             dateModified: post.metadata.publishedAt,
-            description: post.metadata.summary,
+            description: post.metadata.description,
             image: post.metadata.image
               ? `${baseUrl}${post.metadata.image}`
               : `/og?title=${encodeURIComponent(post.metadata.title)}`,
             url: `${baseUrl}/blog/${post.slug}`,
             author: {
               '@type': 'Person',
-              name: 'My Portfolio',
+              name: 'Nick Treffiletti',
             },
           }),
         }}
