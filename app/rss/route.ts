@@ -8,7 +8,7 @@ export async function GET() {
   const allBlogs = await getBlogPosts();
 
   const itemsXml = allBlogs
-    .filter((p) => !p?.metadata?.draft) // skip drafts; handles undefined safely
+    .filter((p) => p?.metadata?.draft !== true) // skip drafts; includes posts with draft: false
     .sort((a, b) => {
       const aDate = a?.metadata?.publishedAt ? new Date(a.metadata.publishedAt) : null;
       const bDate = b?.metadata?.publishedAt ? new Date(b.metadata.publishedAt) : null;

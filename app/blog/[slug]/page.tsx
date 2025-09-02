@@ -6,9 +6,11 @@ import { baseUrl } from 'app/sitemap'
 export async function generateStaticParams() {
   let posts = getBlogPosts()
 
-  return posts.map((post) => ({
-    slug: post.slug,
-  }))
+  return posts
+    .filter((post) => !post.metadata.draft)
+    .map((post) => ({
+      slug: post.slug,
+    }))
 }
 
 export function generateMetadata({ params }) {
@@ -77,7 +79,7 @@ export default function Blog({ params }) {
             url: `${baseUrl}/blog/${post.slug}`,
             author: {
               '@type': 'Person',
-              name: 'My Portfolio',
+              name: 'Nick Treffiletti',
             },
           }),
         }}
