@@ -55,25 +55,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={cx("text-black bg-white dark:text-white dark:bg-black", GeistSans.variable, GeistMono.variable)}>
       <body className="antialiased max-w-xl mx-4 mt-8 lg:mx-auto">
-        {/* <Script
+        <Script
           id="person-jsonld"
           type="application/ld+json"
+          strategy="beforeInteractive" // ensures it’s hoisted into <head> before hydration
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Person",
+              "@id": "https://www.nicktreffiletti.com/#person",
               name: "Nick Treffiletti",
               alternateName: "Nicholas Treffiletti",
               url: "https://www.nicktreffiletti.com",
-              sameAs: [
-                // add as you like:
-                "https://linkedin.com/in/nicktreffiletti",
-                "https://github.com/treffiletti",
-                "https://medium.com/@newyorknick",
-              ],
+              sameAs: ["https://linkedin.com/in/nicktreffiletti", "https://github.com/treffiletti", "https://medium.com/@newyorknick"],
             }),
           }}
-        /> */}
+        />
         <main className="flex-auto min-w-0 mt-6 flex flex-col px-2 md:px-0">
           <Navbar />
           {children}
