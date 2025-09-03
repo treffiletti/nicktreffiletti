@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
+
+
+
 set -euo pipefail
 
-BASE="${BASE:-https://www.nicktreffiletti.com}"
+if [ "${ENV:-local}" = "prod" ]; then
+  BASE="${BASE:-https://www.nicktreffiletti.com}"
+else
+  BASE="${BASE:-http://localhost:3001}"
+fi
 POST_PATH="${POST_PATH:-/}"                 # set to a real post path to test BlogPosting schema (e.g., /posts/hello-world)
-RSS_PATH="${RSS_PATH:-/feed.xml}"
+RSS_PATH="${RSS_PATH:-/rss}"
 SITEMAP_PATH="${SITEMAP_PATH:-/sitemap.xml}"
 ROBOTS_PATH="${ROBOTS_PATH:-/robots.txt}"
 OG_API_PATH="${OG_API_PATH:-/api/og?title=Test}"   # if you use a dynamic OG endpoint; otherwise test an actual post’s og:image
@@ -17,12 +24,12 @@ echo "POST_PATH: $POST_PATH"
 echo
 
 # 1) Next.js site reachable (App Router assumed)
-curl -sS -I "$BASE" | grep -q "200 OK" && pass "Home responds 200" || fail "Home not 200"
-curl -sS "$BASE" | grep -qi "<html" && pass "Home returns HTML" || fail "Home not HTML"
+curl -sS -I "$BASE" | grep -q "200" && pass "Home responds 200" || fail "Home not 200"
+curl -sS "$BASE" | tail -5 | grep -qi "</html>" && pass "Home returns HTML" || fail "Home not HTML"
 
 # 2) MDX content present (heuristic: article page exists and looks like a post)
 if [ "$POST_PATH" != "/" ]; then
-  curl -sS -I "$BASE$POST_PATH" | grep -q "200 OK" && pass "Post responds 200" || fail "Post URL not 200"
+  curl -sS -I "$BASE$POST_PATH" | grep -q "200" && pass "Post responds 200" || fail "Post URL not 200"
   curl -sS "$BASE$POST_PATH" | grep -qi "<article" && pass "Post contains <article>" || echo "ℹ️ Could not find <article> tag (heuristic only)"
 fi
 
@@ -36,9 +43,9 @@ if [ "$POST_PATH" != "/" ]; then
 fi
 
 # 4) next-sitemap generating /sitemap.xml + robots.txt
-curl -sS -I "$BASE$SITEMAP_PATH" | grep -q "200 OK" && pass "Sitemap responds 200" || fail "Sitemap not 200"
+curl -sS -I "$BASE$SITEMAP_PATH" | grep -q "200" && pass "Sitemap responds 200" || fail "Sitemap not 200"
 curl -sS "$BASE$SITEMAP_PATH" | grep -qi "<urlset" && pass "Sitemap looks like XML urlset" || fail "Sitemap missing <urlset>"
-curl -sS -I "$BASE$ROBOTS_PATH" | grep -q "200 OK" && pass "robots.txt responds 200" || fail "robots.txt not 200"
+curl -sS -I "$BASE$ROBOTS_PATH" | grep -q "200" && pass "robots.txt responds 200" || fail "robots.txt not 200"
 curl -sS "$BASE$ROBOTS_PATH" | grep -qi "Sitemap: " && pass "robots.txt references sitemap" || echo "ℹ️ robots.txt missing Sitemap reference"
 
 # 4a) Sitemap does NOT leak drafts
@@ -49,7 +56,7 @@ else
 fi
 
 # 5) RSS feed at /feed.xml and non-empty
-curl -sS -I "$BASE$RSS_PATH" | grep -q "200 OK" && pass "RSS responds 200" || fail "RSS not 200"
+curl -sS -I "$BASE$RSS_PATH" | grep -q "200" && pass "RSS responds 200" || fail "RSS not 200"
 RSS=$(curl -sS "$BASE$RSS_PATH")
 echo "$RSS" | grep -qiE "<rss|<feed" && pass "RSS/Atom root tag OK" || fail "RSS/Atom root tag missing"
 ITEM_COUNT=$(echo "$RSS" | grep -ciE "<item>|<entry>")

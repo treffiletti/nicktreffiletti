@@ -62,7 +62,9 @@ export const metadata: Metadata = {
     },
   },
   // When you add GSC verification, drop the token here:
-  // verification: { google: "paste-site-verification-token" },
+  verification: {
+    google: 'TmzlnEmspSSOIbkSu1YU5w-d_i8fDrEhIXnqlhcx1dY',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -76,6 +78,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         GeistMono.variable,
       )}
     >
+      <head>
+        {process.env.NODE_ENV === 'production' && (
+          <>
+            <script
+              data-goatcounter="https://nicktreffiletti.goatcounter.com/count"
+              async
+              src="//gc.zgo.at/count.js"
+            />
+            <script
+              data-goatcounter="https://analytics.nicktreffiletti.com/count"
+              async
+              src="//gc.zgo.at/count.js"
+            />
+          </>
+        )}
+      </head>
       <body className="antialiased max-w-xl mx-4 mt-8 lg:mx-auto font-sans">
         {/* Accessible skip link */}
         <a
@@ -91,16 +109,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Person",
-              "@id": `${SITE_URL}/#person`,
-              name: "Nick Treffiletti",
-              alternateName: "Nicholas Treffiletti",
+              '@context': 'https://schema.org',
+              '@type': 'Person',
+              '@id': `${SITE_URL}/#person`,
+              name: 'Nick Treffiletti',
+              alternateName: 'Nicholas Treffiletti',
               url: SITE_URL,
               sameAs: [
-                "https://linkedin.com/in/nicktreffiletti",
-                "https://github.com/treffiletti",
-                "https://medium.com/@newyorknick",
+                'https://linkedin.com/in/nicktreffiletti',
+                'https://github.com/treffiletti',
+                'https://medium.com/@newyorknick',
               ],
             }),
           }}
@@ -118,7 +136,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Footer />
         </footer>
 
-        {/* Put these late in the body */}
+        {/* keep these late in the body */}
         <Analytics />
         <SpeedInsights />
       </body>
