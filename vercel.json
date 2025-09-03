@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "framework": "nextjs",
+  "env": {
+    "NEWSLETTER_PLATFORM": "beehiiv",
+    "NEXT_PUBLIC_SITE_URL": "https://www.nicktreffiletti.com"
+  },
+  "build": {
+    "env": {
+      "NEWSLETTER_PLATFORM": "beehiiv",
+      "NEXT_PUBLIC_SITE_URL": "https://www.nicktreffiletti.com"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/subscribe",
+      "dest": "app/api/subscribe/route.ts"
+    }
+  ]
+}
