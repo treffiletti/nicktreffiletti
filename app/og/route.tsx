@@ -1,22 +1,38 @@
 import { ImageResponse } from 'next/og'
 
-export function GET(request: Request) {
-  let url = new URL(request.url)
-  let title = url.searchParams.get('title') || 'Next.js Portfolio Starter'
+export const runtime = 'edge'
+export const size = { width: 1200, height: 630 }
+export const contentType = 'image/png'
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url)
+  const title = searchParams.get('title') || 'Nick Treffiletti'
+  const subtitle = searchParams.get('subtitle') || 'Platform Architecture & Engineering'
 
   return new ImageResponse(
     (
-      <div tw="flex flex-col w-full h-full items-center justify-center bg-white">
-        <div tw="flex flex-col md:flex-row w-full py-12 px-4 md:items-center justify-between p-8">
-          <h2 tw="flex flex-col text-4xl font-bold tracking-tight text-left">
-            {title}
-          </h2>
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#000000',
+          color: '#ffffff',
+          padding: 80,
+          fontFamily: 'system-ui',
+        }}
+      >
+        <div style={{ fontSize: 64, fontWeight: 700, textAlign: 'center', marginBottom: 24 }}>
+          {title}
+        </div>
+        <div style={{ fontSize: 36, opacity: 0.8, textAlign: 'center' }}>
+          {subtitle}
         </div>
       </div>
     ),
-    {
-      width: 1200,
-      height: 630,
-    }
+    { ...size }
   )
 }
