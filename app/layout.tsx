@@ -78,6 +78,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         GeistMono.variable,
       )}
     >
+      <head>
+        {process.env.NODE_ENV === 'production' && (
+          <script
+            data-goatcounter="https://nicktreffiletti.goatcounter.com/count"
+            async
+            src="//gc.zgo.at/count.js"
+          />
+        )}
+      </head>
       <body className="antialiased max-w-xl mx-4 mt-8 lg:mx-auto font-sans">
         {/* Accessible skip link */}
         <a
