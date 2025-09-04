@@ -21,7 +21,7 @@ export async function POST(req: Request) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${process.env.BEEHIIV_API_KEY!}`,
+            Authorization: `Bearer ${BEEHIIV_API_KEY}`,
           },
           body: JSON.stringify({
             email,

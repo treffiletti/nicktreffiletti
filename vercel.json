@@ -4,12 +4,14 @@
   "framework": "nextjs",
   "env": {
     "NEWSLETTER_PLATFORM": "beehiiv",
-    "NEXT_PUBLIC_SITE_URL": "https://www.nicktreffiletti.com"
+    "NEXT_PUBLIC_SITE_URL": "https://www.nicktreffiletti.com",
+    "SITE_URL": "https://www.nicktreffiletti.com"
   },
   "build": {
     "env": {
       "NEWSLETTER_PLATFORM": "beehiiv",
-      "NEXT_PUBLIC_SITE_URL": "https://www.nicktreffiletti.com"
+      "NEXT_PUBLIC_SITE_URL": "https://www.nicktreffiletti.com",
+      "SITE_URL": "https://www.nicktreffiletti.com"
     }
   },
   "routes": [
