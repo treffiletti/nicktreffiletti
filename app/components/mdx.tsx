@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { MDXRemote } from 'next-mdx-remote/rsc'
 import { highlight } from 'sugar-high'
 import React from 'react'
 
@@ -99,11 +98,28 @@ let components = {
   Table,
 }
 
-export function CustomMDX(props) {
+export function CustomMDX({ source, components: userComponents = {} }) {
+  // Parse frontmatter and content
+  const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n/;
+  const match = source.match(frontmatterRegex);
+  const content = match ? source.replace(frontmatterRegex, '') : source;
+  
+  // Simple markdown rendering - convert basic markdown to HTML
+  const htmlContent = content
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^\* (.*$)/gim, '<li>$1</li>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^(?!<[h|l|p])/gm, '<p>')
+    .replace(/(?<![h|l|p]>)$/gm, '</p>');
+  
   return (
-    <MDXRemote
-      {...props}
-      components={{ ...components, ...(props.components || {}) }}
+    <div 
+      dangerouslySetInnerHTML={{ __html: htmlContent }} 
+      className="mdx-content"
     />
-  )
+  );
 }

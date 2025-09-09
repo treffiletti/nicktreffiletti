@@ -1,13 +1,20 @@
-import './global.css';
-import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
-import Header from '@/components/site/header/Header'; // ⬅️ Protocol header (your new component)
-import Footer from './components/footer';
+import localFont from 'next/font/local';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { cn } from '@/lib/cn';
 import { SITE_URL } from '@/lib/site';
+import type { Metadata, Viewport } from 'next';
+import './globals.css';
+
+const InterVariable = localFont({
+  variable: '--font-inter',
+  src: [
+    { path: './InterVariable.woff2', style: 'normal' },
+    { path: './InterVariable-Italic.woff2', style: 'italic' },
+  ],
+});
 
 // If you want explicit control:
 // export const revalidate = 300;
@@ -71,11 +78,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      dir="ltr"
       className={cn(
-        'h-full text-black bg-white dark:text-white dark:bg-black',
         GeistSans.variable,
         GeistMono.variable,
+        InterVariable.variable,
+        'scroll-pt-16 font-sans antialiased dark:bg-gray-950',
       )}
       suppressHydrationWarning
     >
@@ -89,29 +96,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         )}
       </head>
 
-      <body className="min-h-dvh antialiased font-sans">
-        {/* Accessible skip link */}
-        <a
-          href="#content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 rounded bg-neutral-900 text-white px-3 py-2 text-sm"
-        >
-          Skip to content
-        </a>
-
-        {/* Protocol header (replaces old <Navbar />) */}
-        <Header />
-
-        {/* Main container aligned to Compass grid */}
-        <main
-          id="content"
-          className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 mt-6 flex flex-col"
-        >
-          {children}
-        </main>
-
-        <footer className="mt-12">
-          <Footer />
-        </footer>
+      <body>
+        <div className="isolate">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            {children}
+          </div>
+        </div>
 
         {/* Keep these late in the body */}
         <Analytics />

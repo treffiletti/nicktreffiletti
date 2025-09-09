@@ -1,13 +1,21 @@
 import { baseUrl } from 'app/sitemap';
 import { getBlogPosts } from 'app/blog/utils';
+import { getAllPostsWithMetadata } from 'app/(sidebar)/articles/_posts';
 
 export const revalidate = 300; // cache RSS for 5 minutes (adjust as you like)
 
 export async function GET() {
   // Load posts; tolerate missing/partial metadata
   const allBlogs = await getBlogPosts();
+  const allArticles = getAllPostsWithMetadata();
 
-  const itemsXml = allBlogs
+  // Combine blogs and articles
+  const allPosts = [
+    ...allBlogs.map(post => ({ ...post, type: 'blog' })),
+    ...allArticles.map(post => ({ ...post, type: 'article' }))
+  ];
+
+  const itemsXml = allPosts
     .filter((p) => p?.metadata?.draft !== true) // skip drafts; includes posts with draft: false
     .sort((a, b) => {
       const aDate = a?.metadata?.publishedAt ? new Date(a.metadata.publishedAt) : null;
@@ -24,7 +32,7 @@ export async function GET() {
       const description =
         typeof post?.metadata?.description === 'string' ? post.metadata.description : '';
       const pubDate = post?.metadata?.publishedAt ? new Date(post.metadata.publishedAt) : null;
-      const link = `${baseUrl}/blog/${slug}`;
+      const link = `${baseUrl}/${post.type === 'blog' ? 'blog' : 'articles'}/${slug}`;
 
       return `<item>
   <title><![CDATA[${title}]]></title>
