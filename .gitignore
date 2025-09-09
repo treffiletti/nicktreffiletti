@@ -39,3 +39,5 @@ next-env.d.ts
 # misc
 __backup
 *~
+/__*
+/_templates/**/*-js

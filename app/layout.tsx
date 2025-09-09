@@ -2,7 +2,7 @@ import './global.css';
 import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
-import { Navbar } from './components/nav';
+import Header from '@/components/site/header/Header'; // ⬅️ Protocol header (your new component)
 import Footer from './components/footer';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -10,7 +10,7 @@ import { cn } from '@/lib/cn';
 import { SITE_URL } from '@/lib/site';
 
 // If you want explicit control:
-// export const revalidate = 300; // or leave to defaults
+// export const revalidate = 300;
 
 export const viewport: Viewport = {
   themeColor: [
@@ -61,8 +61,8 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  // When you add GSC verification, drop the token here:
   verification: {
+    // GSC token
     google: 'TmzlnEmspSSOIbkSu1YU5w-d_i8fDrEhIXnqlhcx1dY',
   },
 };
@@ -73,10 +73,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       dir="ltr"
       className={cn(
-        'text-black bg-white dark:text-white dark:bg-black',
+        'h-full text-black bg-white dark:text-white dark:bg-black',
         GeistSans.variable,
         GeistMono.variable,
       )}
+      suppressHydrationWarning
     >
       <head>
         {process.env.NODE_ENV === 'production' && (
@@ -84,19 +85,39 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             data-goatcounter="https://analytics.nicktreffiletti.com/count"
             async
             src="//gc.zgo.at/count.js"
-          ></script>
+          />
         )}
       </head>
-      <body className="antialiased max-w-xl mx-4 mt-8 lg:mx-auto font-sans">
+
+      <body className="min-h-dvh antialiased font-sans">
         {/* Accessible skip link */}
         <a
           href="#content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50
-                     rounded bg-neutral-900 text-white px-3 py-2 text-sm"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 rounded bg-neutral-900 text-white px-3 py-2 text-sm"
         >
           Skip to content
         </a>
 
+        {/* Protocol header (replaces old <Navbar />) */}
+        <Header />
+
+        {/* Main container aligned to Compass grid */}
+        <main
+          id="content"
+          className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 mt-6 flex flex-col"
+        >
+          {children}
+        </main>
+
+        <footer className="mt-12">
+          <Footer />
+        </footer>
+
+        {/* Keep these late in the body */}
+        <Analytics />
+        <SpeedInsights />
+
+        {/* Person JSON-LD */}
         <script
           type="application/ld+json"
           suppressHydrationWarning
@@ -116,22 +137,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }),
           }}
         />
-
-        <header>
-          <Navbar />
-        </header>
-
-        <main id="content" className="flex-auto min-w-0 mt-6 flex flex-col px-2 md:px-0">
-          {children}
-        </main>
-
-        <footer>
-          <Footer />
-        </footer>
-
-        {/* keep these late in the body */}
-        <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   );
