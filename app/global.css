@@ -1,161 +1,49 @@
-@import 'tailwindcss';
-@import '@tailwindcss/typography';
+@import "tailwindcss";
+@import "./typography.css";
 
-:root {
-  --color-brand-accent: #06b6d4;
-  --max-w-prose: 72ch;
+@theme inline {
+  --font-sans: var(--font-inter);
+  --font-sans--font-feature-settings: "cv11";
+  --font-mono: var(--font-geist-mono);
 }
 
-/* @theme {
-  --font-family-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-family-mono: var(--font-geist-mono), ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Monaco, Consolas, 'Courier New', monospace;
-} */
+@theme {
+  --text-xs: 0.75rem; /* 12px */
+  --text-xs--line-height: calc(1 / 0.75); /* 16px */
+  --text-sm: 0.875rem; /* 14px */
+  --text-sm--line-height: calc(1.25 / 0.875); /* 20px */
+  --text-base: 1rem; /* 16px */
+  --text-base--line-height: calc(1.5 / 1); /* 24px */
+  --text-lg: 1.125rem; /* 18px */
+  --text-lg--line-height: calc(1.75 / 1.125); /* 28px */
+  --text-xl: 1.25rem; /* 20px */
+  --text-xl--line-height: calc(1.75 / 1.25); /* 28px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-2xl--line-height: calc(2 / 1.5); /* 32px */
+  --text-3xl: 2rem; /* 32px */
+  --text-3xl--line-height: calc(2.5 / 2); /* 40px */
+  --text-4xl: 2.5rem; /* 40px */
+  --text-4xl--line-height: 1; /* 48px */
+  --text-5xl: 3rem; /* 48px */
+  --text-5xl--line-height: 1; /* 48px */
+  --text-6xl: 3.75rem; /* 60px */
+  --text-6xl--line-height: 1; /* 60px */
+  --text-7xl: 4.5rem; /* 72px */
+  --text-7xl--line-height: 1; /* 72px */
+  --text-8xl: 6rem; /* 96px */
+  --text-8xl--line-height: 1; /* 96px */
+  --text-9xl: 8rem; /* 128px */
+  --text-9xl--line-height: 1; /* 128px */
 
-::selection {
-  background-color: #47a3f3;
-  color: #fefefe;
-}
+  --animate-caret-blink: caret-blink 1.1s infinite;
 
-:root {
-  --sh-class: #2d5e9d;
-  --sh-identifier: #354150;
-  --sh-sign: #8996a3;
-  --sh-string: #007f7a;
-  --sh-keyword: #e02518;
-  --sh-comment: #a19595;
-  --sh-jsxliterals: #6266d1;
-  --sh-property: #e25a1c;
-  --sh-entity: #e25a1c;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --sh-class: #4c97f8;
-    --sh-identifier: white;
-    --sh-keyword: #f47067;
-    --sh-string: #0fa295;
+  @keyframes caret-blink {
+    0% {
+      visibility: visible;
+    }
+    50%,
+    100% {
+      visibility: hidden;
+    }
   }
-  html {
-    color-scheme: dark;
-  }
-}
-
-html {
-  min-width: 360px;
-}
-
-.prose .anchor {
-  @apply absolute invisible no-underline;
-
-  margin-left: -1em;
-  padding-right: 0.5em;
-  width: 80%;
-  max-width: 700px;
-  cursor: pointer;
-}
-
-.anchor:hover {
-  @apply visible;
-}
-
-.prose a {
-  @apply underline transition-all decoration-neutral-400 dark:decoration-neutral-600 underline-offset-2 decoration-[0.1em];
-}
-
-.prose .anchor:after {
-  @apply text-neutral-300 dark:text-neutral-700;
-  content: '#';
-}
-
-.prose *:hover > .anchor {
-  @apply visible;
-}
-
-.prose pre {
-  @apply bg-neutral-50 dark:bg-neutral-900 rounded-lg overflow-x-auto border border-neutral-200 dark:border-neutral-900 py-2 px-3 text-sm;
-}
-
-.prose code {
-  @apply px-1 py-0.5 rounded-lg;
-}
-
-.prose pre code {
-  @apply p-0;
-  border: initial;
-  line-height: 1.5;
-}
-
-.prose code span {
-  @apply font-medium;
-}
-
-.prose img {
-  /* Don't apply styles to next/image */
-  @apply m-0;
-}
-
-.prose p {
-  @apply my-4 text-neutral-800 dark:text-neutral-200;
-}
-
-.prose h1 {
-  @apply text-4xl font-medium tracking-tight mt-6 mb-2;
-}
-
-.prose h2 {
-  @apply text-xl font-medium tracking-tight mt-6 mb-2;
-}
-
-.prose h3 {
-  @apply text-xl font-medium tracking-tight mt-6 mb-2;
-}
-
-.prose h4 {
-  @apply text-lg font-medium tracking-tight mt-6 mb-2;
-}
-
-.prose strong {
-  @apply font-medium;
-}
-
-.prose ul {
-  @apply list-disc pl-6;
-}
-
-.prose ol {
-  @apply list-decimal pl-6;
-}
-
-.prose > :first-child {
-  /* Override removing top margin, causing layout shift */
-  margin-top: 1.25em !important;
-  margin-bottom: 1.25em !important;
-}
-
-pre::-webkit-scrollbar {
-  display: none;
-}
-
-pre {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-}
-
-/* Remove Safari input shadow on mobile */
-input[type='text'],
-input[type='email'] {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-}
-
-table {
-  display: block;
-  max-width: fit-content;
-  overflow-x: auto;
-  white-space: nowrap;
-}
-
-.title {
-  text-wrap: balance;
 }
