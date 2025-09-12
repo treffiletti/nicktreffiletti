@@ -1,5 +1,5 @@
 import { baseUrl } from '@/app/sitemap';
-import { getPosts } from '@/data/posts';
+import { getPosts } from '@/data/articles';
 
 export const revalidate = 300; // cache RSS for 5 minutes (adjust as you like)
 
@@ -32,7 +32,7 @@ export async function GET() {
       const title = String(post?.title ?? (slug || 'Untitled'));
       const description = String(post?.summary ?? '');
       const pubDate = post?.publishedAt ? new Date(post.publishedAt) : null;
-      const link = `${baseUrl}/blog/${post.slug}`;
+      const link = `${baseUrl}/articles/${post.slug}`;
 
       return `<item>
   <title><![CDATA[${title}]]></title>

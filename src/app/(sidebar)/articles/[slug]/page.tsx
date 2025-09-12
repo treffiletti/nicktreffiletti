@@ -1,7 +1,14 @@
 import { notFound } from 'next/navigation';
-import { getAllPostSlugs, getPostBySlug } from '../_posts';
+import {
+  Breadcrumb,
+  BreadcrumbHome,
+  BreadcrumbSeparator,
+  Breadcrumbs,
+} from '@/components/breadcrumbs';
+import { SidebarLayoutContent } from '@/components/sidebar-layout';
 import { CustomMDX } from '@/app/components/mdx';
 import { baseUrl } from '@/app/sitemap';
+import { getAllPostSlugs, getPostBySlug } from '@/data/articles';
 
 function formatDate(date: string): string {
   return new Date(date).toLocaleDateString('en-US', {
@@ -61,7 +68,17 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   }
 
   return (
-    <section>
+    <SidebarLayoutContent
+      breadcrumbs={
+        <Breadcrumbs>
+          <BreadcrumbHome />
+          <BreadcrumbSeparator />
+          <Breadcrumb href="/articles">Articles</Breadcrumb>
+          <BreadcrumbSeparator />
+          <Breadcrumb>{post.metadata.title}</Breadcrumb>
+        </Breadcrumbs>
+      }
+    >
       <script
         type="application/ld+json"
         suppressHydrationWarning
@@ -106,6 +123,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       <article className="prose prose-slate dark:prose-invert max-w-prose">
         <CustomMDX source={post.source} />
       </article>
-    </section>
+    </SidebarLayoutContent>
   );
 }
