@@ -1,68 +1,65 @@
-import fs from "node:fs";
-import path from "node:path";
+import fs from 'node:fs';
+import path from 'node:path';
+import matter from 'gray-matter';
 
-const ARTICLES_DIR = path.join(process.cwd(), "content", "articles");
+const ARTICLES_DIR = path.join(process.cwd(), 'content', 'articles');
 
 interface ArticleMetadata {
   title: string;
   publishedAt: string;
   description?: string;
   image?: string;
+  tags?: string[];
   draft?: boolean;
+}
+
+interface Article {
+  slug: string;
+  metadata: ArticleMetadata;
+  source: string;
+  readingTime: number;
 }
 
 export function getAllPostSlugs(): string[] {
   if (!fs.existsSync(ARTICLES_DIR)) return [];
   const files = fs.readdirSync(ARTICLES_DIR);
-  return files.filter(f => f.endsWith(".mdx")).map(f => f.replace(/\.mdx$/, ""));
+  return files.filter((f) => f.endsWith('.mdx')).map((f) => f.replace(/\.mdx$/, ''));
 }
 
 export function getPostSource(slug: string): string {
   const filePath = path.join(ARTICLES_DIR, `${slug}.mdx`);
-  return fs.readFileSync(filePath, "utf8");
+  return fs.readFileSync(filePath, 'utf8');
 }
 
-export function getAllPostsWithMetadata() {
+export function getAllPostsWithMetadata(): Article[] {
   const slugs = getAllPostSlugs();
-  return slugs.map(slug => {
-    const source = getPostSource(slug);
-    const metadata = parseMetadata(source);
-    return { slug, metadata, source };
-  }).filter(post => !post.metadata.draft);
+  return slugs.map((slug) => parseFile(slug)).filter((post) => !post.metadata.draft);
 }
 
-export function getPostBySlug(slug: string) {
-  const source = getPostSource(slug);
-  const metadata = parseMetadata(source);
-  return { slug, metadata, source };
-}
-
-function parseMetadata(source: string): ArticleMetadata {
-  const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---/;
-  const match = source.match(frontmatterRegex);
-  
-  if (!match) {
-    return {
-      title: "Untitled",
-      publishedAt: new Date().toISOString(),
-    };
+export function getPostBySlug(slug: string): Article | null {
+  try {
+    return parseFile(slug);
+  } catch {
+    return null;
   }
+}
 
-  const frontmatter = match[1];
-  const metadata: Partial<ArticleMetadata> = {};
-  
-  frontmatter.split('\n').forEach(line => {
-    const [key, ...valueParts] = line.split(':');
-    if (key && valueParts.length > 0) {
-      const value = valueParts.join(':').trim().replace(/^["']|["']$/g, '');
-      metadata[key.trim() as keyof ArticleMetadata] = value as any;
-    }
-  });
-
-  return {
-    title: metadata.title || "Untitled",
-    publishedAt: metadata.publishedAt || new Date().toISOString(),
-    description: metadata.description,
-    draft: metadata.draft,
+function parseFile(slug: string): Article {
+  const filePath = path.join(ARTICLES_DIR, `${slug}.mdx`);
+  const file = fs.readFileSync(filePath, 'utf8');
+  const { content, data } = matter(file);
+  const metadata: ArticleMetadata = {
+    title: data.title || 'Untitled',
+    publishedAt: data.publishedAt || new Date().toISOString(),
+    description: data.description,
+    image: data.image,
+    tags: Array.isArray(data.tags)
+      ? data.tags
+      : typeof data.tags === 'string'
+        ? data.tags.split(',').map((t) => t.trim())
+        : [],
+    draft: data.draft,
   };
+  const readingTime = Math.max(1, Math.ceil(content.split(/\s+/).length / 200));
+  return { slug, metadata, source: file, readingTime };
 }

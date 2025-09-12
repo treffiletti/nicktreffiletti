@@ -1,32 +1,22 @@
-"use client";
+'use client';
 
-import {
-  Dropdown,
-  DropdownButton,
-  DropdownItem,
-  DropdownMenu,
-} from "@/components/dropdown";
-import { IconButton } from "@/components/icon-button";
-import { ChevronDownIcon } from "@/icons/chevron-down-icon";
-import { CloseIcon } from "@/icons/close-icon";
-import { MenuIcon } from "@/icons/menu-icon";
-import {
-  CloseButton,
-  Dialog,
-  DialogBackdrop,
-  DialogPanel,
-} from "@headlessui/react";
-import { clsx } from "clsx";
-import Link from "next/link";
-import type React from "react";
-import { useState } from "react";
+import { Dropdown, DropdownButton, DropdownItem, DropdownMenu } from '@/components/dropdown';
+import { IconButton } from '@/components/icon-button';
+import { ChevronDownIcon } from '@/icons/chevron-down-icon';
+import { CloseIcon } from '@/icons/close-icon';
+import { MenuIcon } from '@/icons/menu-icon';
+import { CloseButton, Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react';
+import { clsx } from 'clsx';
+import Link from 'next/link';
+import type React from 'react';
+import { useState } from 'react';
 
-export function Navbar({ children, ...props }: React.ComponentProps<"div">) {
+export function Navbar({ children, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       className={clsx(
-        "sticky top-0 z-10 bg-white/90 backdrop-blur-sm dark:bg-gray-950/90",
-        "flex items-center justify-between gap-x-8 px-4 py-4 sm:px-6",
+        'sticky top-0 z-10 bg-white/90 backdrop-blur-sm dark:bg-gray-950/90',
+        'flex items-center justify-between gap-x-8 px-4 py-4 sm:px-6',
       )}
       {...props}
     >
@@ -36,13 +26,7 @@ export function Navbar({ children, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function MobileNavigation({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+function MobileNavigation({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <Dialog open={open} onClose={onClose} className="lg:hidden">
       <DialogBackdrop className="fixed inset-0 bg-gray-950/25" />
@@ -56,12 +40,13 @@ function MobileNavigation({
           <div className="mt-4">
             <div className="flex flex-col gap-y-2">
               {[
-                ["Home", "/"],
-                ["Interviews", "/interviews"],
-                ["Resources", "/resources"],
-                ["Blog", "/blog"],
-                ["About", "/about"],
-                ["Now", "/now"],
+                ['Home', '/'],
+                ['Articles', '/articles'],
+                ['Library', '/library'],
+                ['Resources', '/resources'],
+                ['About', '/about'],
+                ['Now', '/now'],
+                ['Subscribe', '/subscribe'],
               ].map(([title, href]) => (
                 <CloseButton
                   as={Link}
@@ -76,9 +61,9 @@ function MobileNavigation({
             <div className="mt-6 flex flex-col gap-y-2">
               <h3 className="px-4 py-1 text-sm/7 text-gray-500">Account</h3>
               {[
-                ["Settings", "#"],
-                ["Support", "#"],
-                ["Sign out", "/login"],
+                ['Settings', '#'],
+                ['Support', '#'],
+                ['Sign out', '/login'],
               ].map(([title, href], index) => (
                 <CloseButton
                   as={Link}
@@ -105,17 +90,15 @@ function SiteNavigation() {
       <IconButton className="lg:hidden" onClick={() => setMobileMenuOpen(true)}>
         <MenuIcon className="fill-gray-950 dark:fill-white" />
       </IconButton>
-      <MobileNavigation
-        open={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
-      />
+      <MobileNavigation open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
       <div className="flex gap-x-6 text-sm/6 text-gray-950 max-lg:hidden dark:text-white">
         <Link href="/">Home</Link>
-        <Link href="/interviews">Interviews</Link>
+        <Link href="/articles">Articles</Link>
+        <Link href="/library">Library</Link>
         <Link href="/resources">Resources</Link>
-        <Link href="/blog">Blog</Link>
         <Link href="/about">About</Link>
         <Link href="/now">Now</Link>
+        <Link href="/subscribe">Subscribe</Link>
         <Dropdown>
           <DropdownButton className="inline-flex items-center gap-x-2 focus:not-data-focus:outline-none">
             Account

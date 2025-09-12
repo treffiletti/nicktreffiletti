@@ -8,8 +8,10 @@ import { motion } from 'framer-motion';
 const NAV = [
   { href: '/articles', label: 'Articles' },
   { href: '/library', label: 'Library' },
+  { href: '/resources', label: 'Resources' },
   { href: '/about', label: 'About' },
   { href: '/now', label: 'Now' },
+  { href: '/subscribe', label: 'Subscribe' },
 ];
 
 function NavItem({
@@ -188,7 +190,7 @@ export default function Header() {
           <ThemeToggle />
 
           <Link
-            href="/#subscribe"
+            href="/subscribe"
             className="rounded-md bg-slate-900 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-600 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300 dark:focus-visible:outline-slate-400"
           >
             Subscribe
