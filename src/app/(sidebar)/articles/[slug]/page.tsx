@@ -5,7 +5,9 @@ import {
   BreadcrumbSeparator,
   Breadcrumbs,
 } from '@/components/breadcrumbs';
+import Image from 'next/image';
 import { SidebarLayoutContent } from '@/components/sidebar-layout';
+import TableOfContents from '@/components/table-of-contents';
 import { CustomMDX } from '@/app/components/mdx';
 import { baseUrl } from '@/app/sitemap';
 import { getAllPostSlugs, getPostBySlug } from '@/data/articles';
@@ -101,28 +103,48 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           }),
         }}
       />
-      <h1 className="title font-semibold text-2xl tracking-tighter">{post.metadata.title}</h1>
-      <div className="mt-2 mb-8 flex flex-col gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-        <p>
-          {formatDate(post.metadata.publishedAt)} · {post.readingTime} min read
-        </p>
-        {post.metadata.tags?.length ? (
-          <p className="text-xs">
-            {post.metadata.tags.map((t) => (
-              <a
-                key={t}
-                href={`/articles?tag=${encodeURIComponent(t)}`}
-                className="mr-2 hover:underline"
-              >
-                #{t}
-              </a>
-            ))}
-          </p>
-        ) : null}
+      <div className="mx-auto max-w-7xl">
+        {post.metadata.image && (
+          <div className="-mx-2 sm:-mx-4">
+            <Image
+              src={post.metadata.image}
+              alt={post.metadata.title}
+              width={1216}
+              height={684}
+              className="w-full rounded-lg"
+            />
+          </div>
+        )}
+        <div className="mx-auto flex max-w-2xl gap-x-10 py-10 sm:py-14 lg:max-w-5xl">
+          <div className="w-full flex-1">
+            <h1 className="title font-semibold text-2xl tracking-tighter">{post.metadata.title}</h1>
+            <div className="mt-2 mb-8 flex flex-col gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+              <p>
+                {formatDate(post.metadata.publishedAt)} · {post.readingTime} min read
+              </p>
+              {post.metadata.tags?.length ? (
+                <p className="text-xs">
+                  {post.metadata.tags.map((t) => (
+                    <a
+                      key={t}
+                      href={`/articles?tag=${encodeURIComponent(t)}`}
+                      className="mr-2 hover:underline"
+                    >
+                      #{t}
+                    </a>
+                  ))}
+                </p>
+              ) : null}
+            </div>
+            <article id="content" className="prose prose-slate dark:prose-invert max-w-none">
+              <CustomMDX source={post.source} />
+            </article>
+          </div>
+          <div className="hidden w-66 lg:block">
+            <TableOfContents contentId="content" />
+          </div>
+        </div>
       </div>
-      <article className="prose prose-slate dark:prose-invert max-w-prose">
-        <CustomMDX source={post.source} />
-      </article>
     </SidebarLayoutContent>
   );
 }
