@@ -2,14 +2,15 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { highlight } from 'sugar-high'
 import React from 'react'
+import { MDXRemote } from 'next-mdx-remote/rsc'
 
-function Table({ data }) {
-  let headers = data.headers.map((header, index) => (
+function Table({ data }: { data: { headers: string[]; rows: string[][] } }) {
+  let headers = data.headers.map((header: string, index: number) => (
     <th key={index}>{header}</th>
   ))
-  let rows = data.rows.map((row, index) => (
+  let rows = data.rows.map((row: string[], index: number) => (
     <tr key={index}>
-      {row.map((cell, cellIndex) => (
+      {row.map((cell: string, cellIndex: number) => (
         <td key={cellIndex}>{cell}</td>
       ))}
     </tr>
@@ -25,7 +26,7 @@ function Table({ data }) {
   )
 }
 
-function CustomLink(props) {
+function CustomLink(props: any) {
   let href = props.href
 
   if (href.startsWith('/')) {
@@ -43,16 +44,16 @@ function CustomLink(props) {
   return <a target="_blank" rel="noopener noreferrer" {...props} />
 }
 
-function RoundedImage(props) {
+function RoundedImage(props: any) {
   return <Image alt={props.alt} className="rounded-lg" {...props} />
 }
 
-function Code({ children, ...props }) {
+function Code({ children, ...props }: { children: string; [key: string]: any }) {
   let codeHTML = highlight(children)
   return <code dangerouslySetInnerHTML={{ __html: codeHTML }} {...props} />
 }
 
-function slugify(str) {
+function slugify(str: string) {
   return str
     .toString()
     .toLowerCase()
@@ -63,9 +64,9 @@ function slugify(str) {
     .replace(/\-\-+/g, '-') // Replace multiple - with single -
 }
 
-function createHeading(level) {
-  const Heading = ({ children }) => {
-    let slug = slugify(children)
+function createHeading(level: number) {
+  const Heading = ({ children }: { children: React.ReactNode }) => {
+    let slug = slugify(children as string)
     return React.createElement(
       `h${level}`,
       { id: slug },
@@ -98,28 +99,16 @@ let components = {
   Table,
 }
 
-export function CustomMDX({ source, components: userComponents = {} }) {
+export function CustomMDX({ source }: { source: string }) {
   // Parse frontmatter and content
   const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n/;
   const match = source.match(frontmatterRegex);
   const content = match ? source.replace(frontmatterRegex, '') : source;
   
-  // Simple markdown rendering - convert basic markdown to HTML
-  const htmlContent = content
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^\* (.*$)/gim, '<li>$1</li>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/^(?!<[h|l|p])/gm, '<p>')
-    .replace(/(?<![h|l|p]>)$/gm, '</p>');
-  
   return (
-    <div 
-      dangerouslySetInnerHTML={{ __html: htmlContent }} 
-      className="mdx-content"
+    <MDXRemote 
+      source={content} 
+      components={components}
     />
   );
 }

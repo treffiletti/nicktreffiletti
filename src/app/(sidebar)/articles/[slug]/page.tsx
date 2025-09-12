@@ -1,33 +1,39 @@
-import { notFound } from 'next/navigation'
-import { CustomMDX } from 'app/components/mdx'
-import { formatDate, getBlogPosts } from 'app/blog/utils'
-import { baseUrl } from 'app/sitemap'
+import { notFound } from "next/navigation";
+import { getAllPostSlugs, getPostBySlug } from "../_posts";
+import { CustomMDX } from "@/app/components/mdx";
+import { baseUrl } from "@/app/sitemap";
 
-export async function generateStaticParams() {
-  let posts = getBlogPosts()
-
-  return posts
-    .filter((post) => !post.metadata.draft)
-    .map((post) => ({
-      slug: post.slug,
-    }))
+function formatDate(date: string): string {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 }
 
-export function generateMetadata({ params }) {
-  let post = getBlogPosts().find((post) => post.slug === params.slug)
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+  const slugs = getAllPostSlugs();
+  return slugs.map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
   if (!post) {
-    return
+    return;
   }
 
-  let {
+  const {
     title,
     publishedAt: publishedTime,
     description,
     image,
-  } = post.metadata
-  let ogImage = image
+  } = post.metadata;
+  const ogImage = image
     ? image
-    : `${baseUrl}/og?title=${encodeURIComponent(title)}`
+    : `${baseUrl}/og?title=${encodeURIComponent(title)}`;
 
   return {
     title,
@@ -37,7 +43,7 @@ export function generateMetadata({ params }) {
       description,
       type: 'article',
       publishedTime,
-      url: `${baseUrl}/blog/${post.slug}`,
+      url: `${baseUrl}/articles/${post.slug}`,
       images: [
         {
           url: ogImage,
@@ -50,16 +56,17 @@ export function generateMetadata({ params }) {
       description,
       images: [ogImage],
     },
-  }
+  };
 }
 
-export default function Blog({ params }) {
-  let post = getBlogPosts().find((post) => post.slug === params.slug)
+export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
 
   if (!post) {
-    notFound()
+    notFound();
   }
-
+  
   return (
     <section>
       <script
@@ -76,7 +83,7 @@ export default function Blog({ params }) {
             image: post.metadata.image
               ? `${baseUrl}${post.metadata.image}`
               : `/og?title=${encodeURIComponent(post.metadata.title)}`,
-            url: `${baseUrl}/blog/${post.slug}`,
+            url: `${baseUrl}/articles/${post.slug}`,
             author: {
               '@type': 'Person',
               name: 'Nick Treffiletti',
@@ -92,9 +99,9 @@ export default function Blog({ params }) {
           {formatDate(post.metadata.publishedAt)}
         </p>
       </div>
-      <article className="prose">
-        <CustomMDX source={post.content} />
+      <article className="prose prose-slate dark:prose-invert max-w-prose">
+        <CustomMDX source={post.source} />
       </article>
     </section>
-  )
+  );
 }

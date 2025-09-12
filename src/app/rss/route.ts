@@ -1,25 +1,26 @@
-import { baseUrl } from 'app/sitemap';
-import { getBlogPosts } from 'app/blog/utils';
-import { getAllPostsWithMetadata } from 'app/(sidebar)/articles/_posts';
+import { baseUrl } from '@/app/sitemap';
+import { getPosts } from '@/data/posts';
 
 export const revalidate = 300; // cache RSS for 5 minutes (adjust as you like)
 
 export async function GET() {
-  // Load posts; tolerate missing/partial metadata
-  const allBlogs = await getBlogPosts();
-  const allArticles = getAllPostsWithMetadata();
+  // Load posts
+  const allPosts = getPosts();
 
-  // Combine blogs and articles
-  const allPosts = [
-    ...allBlogs.map(post => ({ ...post, type: 'blog' })),
-    ...allArticles.map(post => ({ ...post, type: 'article' }))
-  ];
+  // Format posts for RSS
+  const combinedPosts = allPosts.map((post) => ({
+    title: post.title,
+    publishedAt: post.publishedAt,
+    summary: post.summary,
+    slug: post.slug,
+    type: 'post' as const,
+  }));
 
-  const itemsXml = allPosts
-    .filter((p) => p?.metadata?.draft !== true) // skip drafts; includes posts with draft: false
+  const itemsXml = combinedPosts
+    .filter((p) => p?.publishedAt !== null) // skip drafts; includes posts with draft: false
     .sort((a, b) => {
-      const aDate = a?.metadata?.publishedAt ? new Date(a.metadata.publishedAt) : null;
-      const bDate = b?.metadata?.publishedAt ? new Date(b.metadata.publishedAt) : null;
+      const aDate = a?.publishedAt ? new Date(a.publishedAt) : null;
+      const bDate = b?.publishedAt ? new Date(b.publishedAt) : null;
       if (aDate && bDate) return bDate.getTime() - aDate.getTime();
       if (aDate && !bDate) return -1;
       if (!aDate && bDate) return 1;
@@ -28,11 +29,10 @@ export async function GET() {
     })
     .map((post) => {
       const slug = String(post?.slug ?? '');
-      const title = String(post?.metadata?.title ?? (slug || 'Untitled'));
-      const description =
-        typeof post?.metadata?.description === 'string' ? post.metadata.description : '';
-      const pubDate = post?.metadata?.publishedAt ? new Date(post.metadata.publishedAt) : null;
-      const link = `${baseUrl}/${post.type === 'blog' ? 'blog' : 'articles'}/${slug}`;
+      const title = String(post?.title ?? (slug || 'Untitled'));
+      const description = String(post?.summary ?? '');
+      const pubDate = post?.publishedAt ? new Date(post.publishedAt) : null;
+      const link = `${baseUrl}/blog/${post.slug}`;
 
       return `<item>
   <title><![CDATA[${title}]]></title>

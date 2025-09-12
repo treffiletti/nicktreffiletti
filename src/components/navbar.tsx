@@ -57,7 +57,9 @@ function MobileNavigation({
             <div className="flex flex-col gap-y-2">
               {[
                 ["Home", "/"],
-                ["Articles", "/articles"],
+                ["Interviews", "/interviews"],
+                ["Resources", "/resources"],
+                ["Blog", "/blog"],
                 ["About", "/about"],
                 ["Now", "/now"],
               ].map(([title, href]) => (
@@ -109,7 +111,9 @@ function SiteNavigation() {
       />
       <div className="flex gap-x-6 text-sm/6 text-gray-950 max-lg:hidden dark:text-white">
         <Link href="/">Home</Link>
-        <Link href="/articles">Articles</Link>
+        <Link href="/interviews">Interviews</Link>
+        <Link href="/resources">Resources</Link>
+        <Link href="/blog">Blog</Link>
         <Link href="/about">About</Link>
         <Link href="/now">Now</Link>
         <Dropdown>

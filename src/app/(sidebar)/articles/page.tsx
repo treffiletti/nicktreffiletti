@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { getAllPostsWithMetadata } from "./_posts";
-import { formatDate } from "@/app/blog/utils";
+
+function formatDate(date: string): string {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
 
 export default function ArticlesIndex() {
   const posts = getAllPostsWithMetadata();

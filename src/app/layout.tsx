@@ -97,11 +97,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body>
-        <div className="isolate">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            {children}
-          </div>
-        </div>
+        <div className="isolate">{children}</div>
 
         {/* Keep these late in the body */}
         <Analytics />
