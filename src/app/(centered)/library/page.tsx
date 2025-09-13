@@ -11,7 +11,7 @@ import { PageSection } from '@/components/page-section';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Library - Compass',
+  title: 'Library',
   description: 'Curated references for platform architecture and engineering leadership.',
 };
 

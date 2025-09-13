@@ -12,7 +12,7 @@ import { VideoCard } from '@/components/video-card';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Resources - Compass',
+  title: 'Resources',
   description: 'Articles, talks, and tools for platform architects and engineering leaders.',
 };
 

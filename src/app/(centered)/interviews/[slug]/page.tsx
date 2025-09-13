@@ -3,14 +3,14 @@ import {
   BreadcrumbHome,
   Breadcrumbs,
   BreadcrumbSeparator,
-} from "@/components/breadcrumbs";
-import { CenteredPageLayout } from "@/components/centered-layout";
-import { NextPageLink } from "@/components/next-page-link";
-import { TimestampButton, Video } from "@/components/video-player";
-import { getInterview, getInterviewTranscript } from "@/data/interviews";
-import { ClockIcon } from "@/icons/clock-icon";
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+} from '@/components/breadcrumbs';
+import { CenteredPageLayout } from '@/components/centered-layout';
+import { NextPageLink } from '@/components/next-page-link';
+import { TimestampButton, Video } from '@/components/video-player';
+import { getInterview, getInterviewTranscript } from '@/data/interviews';
+import { ClockIcon } from '@/icons/clock-icon';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 function formatDuration(seconds: number): string {
   let h = Math.floor(seconds / 3600);
@@ -27,16 +27,12 @@ export async function generateMetadata({
   let interview = await getInterview((await params).slug);
 
   return {
-    title: `Interview with ${interview?.name} - Compass`,
+    title: `Interview with ${interview?.name}`,
     description: interview?.subtitle,
   };
 }
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   let interview = await getInterview((await params).slug);
 
   if (!interview) {
@@ -58,11 +54,7 @@ export default async function Page({
       }
     >
       <div className="-mx-2 sm:-mx-4">
-        <Video
-          id="video"
-          src={interview.video.hd}
-          poster={interview.video.thumbnail}
-        />
+        <Video id="video" src={interview.video.hd} poster={interview.video.thumbnail} />
       </div>
       <div className="mx-auto max-w-2xl py-14">
         <div className="space-y-16">
@@ -73,9 +65,7 @@ export default async function Page({
                 {interview.name}
               </h1>
             </hgroup>
-            <p className="text-base/7 text-gray-700 dark:text-gray-400">
-              {interview.intro}
-            </p>
+            <p className="text-base/7 text-gray-700 dark:text-gray-400">{interview.intro}</p>
             <div className="flex items-center gap-x-2 text-sm/7 font-semibold text-gray-950 dark:text-white">
               <ClockIcon className="stroke-gray-950/40 dark:stroke-white/40" />
               <span>{formatDuration(interview.video.duration)}</span>
@@ -87,18 +77,9 @@ export default async function Page({
             </h2>
             <div className="mt-8 grid grid-cols-[auto_1fr] gap-x-6 gap-y-4">
               {interview.chapters.map(({ start, title }) => (
-                <div
-                  key={start}
-                  className="col-span-2 grid grid-cols-subgrid items-baseline"
-                >
-                  <TimestampButton
-                    start={start}
-                    videoId="video"
-                    className="justify-self-end"
-                  />
-                  <p className="text-sm/7 font-semibold text-gray-950 dark:text-white">
-                    {title}
-                  </p>
+                <div key={start} className="col-span-2 grid grid-cols-subgrid items-baseline">
+                  <TimestampButton start={start} videoId="video" className="justify-self-end" />
+                  <p className="text-sm/7 font-semibold text-gray-950 dark:text-white">{title}</p>
                 </div>
               ))}
             </div>
@@ -109,15 +90,8 @@ export default async function Page({
             </h2>
             <div className="mt-8 grid grid-cols-[auto_1fr] gap-x-6 gap-y-8">
               {transcript.map(({ start, speaker, text }) => (
-                <div
-                  key={start}
-                  className="col-span-2 grid grid-cols-subgrid items-baseline"
-                >
-                  <TimestampButton
-                    start={start}
-                    videoId="video"
-                    className="justify-self-end"
-                  />
+                <div key={start} className="col-span-2 grid grid-cols-subgrid items-baseline">
+                  <TimestampButton start={start} videoId="video" className="justify-self-end" />
                   <div>
                     <p className="text-sm/7 font-semibold text-gray-950 dark:text-white">
                       {speaker}
@@ -146,7 +120,7 @@ export default async function Page({
           ) : (
             <NextPageLink
               title="Resources"
-              description="Before you decide where to go, you need to know where you're starting from."
+              description="Curated articles, podcasts, and tools for platform teams."
               href="/resources"
             />
           )}

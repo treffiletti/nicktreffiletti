@@ -44,6 +44,7 @@ function MobileNavigation({ open, onClose }: { open: boolean; onClose: () => voi
                 ['Articles', '/articles'],
                 ['Library', '/library'],
                 ['Resources', '/resources'],
+                ['Interviews', '/interviews'],
                 ['About', '/about'],
                 ['Now', '/now'],
                 ['Subscribe', '/subscribe'],
@@ -96,6 +97,7 @@ function SiteNavigation() {
         <Link href="/articles">Articles</Link>
         <Link href="/library">Library</Link>
         <Link href="/resources">Resources</Link>
+        <Link href="/interviews">Interviews</Link>
         <Link href="/about">About</Link>
         <Link href="/now">Now</Link>
         <Link href="/subscribe">Subscribe</Link>

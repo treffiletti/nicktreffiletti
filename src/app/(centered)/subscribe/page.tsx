@@ -9,7 +9,7 @@ import { SubscribeForm } from '@/app/components/subscribe-form';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Subscribe - Compass',
+  title: 'Subscribe',
   description: 'Subscribe to Platform Architecture Weekly',
 };
 
