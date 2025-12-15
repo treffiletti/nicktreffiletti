@@ -9,17 +9,11 @@ const withMDX = createMDX({
 });
 
 const nextConfig = {
-  async redirects() {
-    return [{ source: "/feed.xml", destination: "/rss", permanent: true }];
-  },
   turbopack: {},
   pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx"],
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
+      new URL("https://assets.tailwindcss.com/templates/compass/**"),
     ],
   },
 };

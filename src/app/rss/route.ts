@@ -1,67 +1,43 @@
-import { baseUrl } from '@/app/sitemap';
-import { getPosts } from '@/data/posts';
+import { getBlogPosts } from '@/lib/blog'
 
-export const revalidate = 300; // cache RSS for 5 minutes (adjust as you like)
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
 export async function GET() {
-  // Load posts
-  const allPosts = getPosts();
+  let allBlogs = getBlogPosts()
 
-  // Format posts for RSS
-  const combinedPosts = allPosts.map((post) => ({
-    title: post.title,
-    publishedAt: post.publishedAt,
-    summary: post.summary,
-    slug: post.slug,
-    type: 'post' as const,
-  }));
-
-  const itemsXml = combinedPosts
-    .filter((p) => p?.publishedAt !== null) // skip drafts; includes posts with draft: false
+  const itemsXml = allBlogs
     .sort((a, b) => {
-      const aDate = a?.publishedAt ? new Date(a.publishedAt) : null;
-      const bDate = b?.publishedAt ? new Date(b.publishedAt) : null;
-      if (aDate && bDate) return bDate.getTime() - aDate.getTime();
-      if (aDate && !bDate) return -1;
-      if (!aDate && bDate) return 1;
-      // fallback: sort by slug
-      return String(a?.slug ?? '').localeCompare(String(b?.slug ?? ''));
+      if (new Date(a.metadata.publishedAt) > new Date(b.metadata.publishedAt)) {
+        return -1
+      }
+      return 1
     })
-    .map((post) => {
-      const slug = String(post?.slug ?? '');
-      const title = String(post?.title ?? (slug || 'Untitled'));
-      const description = String(post?.summary ?? '');
-      const pubDate = post?.publishedAt ? new Date(post.publishedAt) : null;
-      const link = `${baseUrl}/blog/${post.slug}`;
+    .map(
+      (post) =>
+        `<item>
+          <title>${post.metadata.title}</title>
+          <link>${baseUrl}/blog/${post.slug}</link>
+          <description>${post.metadata.summary || ''}</description>
+          <pubDate>${new Date(
+            post.metadata.publishedAt
+          ).toUTCString()}</pubDate>
+        </item>`
+    )
+    .join('\n')
 
-      return `<item>
-  <title><![CDATA[${title}]]></title>
-  <link>${link}</link>
-  <guid>${link}</guid>
-  ${pubDate ? `<pubDate>${pubDate.toUTCString()}</pubDate>` : ''}
-  ${description ? `<description><![CDATA[${description}]]></description>` : ''}
-</item>`;
-    })
-    .join('\n');
-
-  const now = new Date();
-
-  const rssFeed = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-<channel>
-  <title>Nick Treffiletti — Platform Architecture &amp; Engineering</title>
-  <link>${baseUrl}</link>
-  <description>Essays on platform architecture, developer platforms, and cloud-native ops.</description>
-  <language>en-us</language>
-  <lastBuildDate>${now.toUTCString()}</lastBuildDate>
-  ${itemsXml}
-</channel>
-</rss>`;
+  const rssFeed = `<?xml version="1.0" encoding="UTF-8" ?>
+  <rss version="2.0">
+    <channel>
+        <title>Nick Treffiletti's Blog</title>
+        <link>${baseUrl}</link>
+        <description>Blog posts by Nick Treffiletti</description>
+        ${itemsXml}
+    </channel>
+  </rss>`
 
   return new Response(rssFeed, {
     headers: {
-      'Content-Type': 'application/rss+xml; charset=utf-8',
-      'Cache-Control': 's-maxage=300, stale-while-revalidate=86400',
+      'Content-Type': 'text/xml',
     },
-  });
+  })
 }

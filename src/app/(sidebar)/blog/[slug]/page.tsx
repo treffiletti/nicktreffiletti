@@ -1,134 +1,101 @@
-import {
-  Breadcrumb,
-  BreadcrumbHome,
-  Breadcrumbs,
-  BreadcrumbSeparator,
-} from '@/components/breadcrumbs';
-import { SidebarLayoutContent } from '@/components/sidebar-layout';
-import { CustomMDX } from '@/app/components/mdx';
-import { getPosts, getPost } from '@/data/posts';
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
+import { notFound } from 'next/navigation'
+import { CustomMDX } from '@/components/mdx'
+import { formatDate, getBlogPosts } from '@/lib/blog'
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
 export async function generateStaticParams() {
-  const posts = await getPosts();
+  let posts = getBlogPosts()
+
   return posts.map((post) => ({
     slug: post.slug,
-  }));
+  }))
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const { slug } = await params;
-  const post = await getPost(slug);
-  
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  let post = getBlogPosts().find((post) => post.slug === slug)
   if (!post) {
-    return {};
+    return
   }
+
+  let {
+    title,
+    publishedAt: publishedTime,
+    summary: description,
+    image,
+  } = post.metadata
+  let ogImage = image
+    ? image
+    : `${baseUrl}/og?title=${encodeURIComponent(title)}`
 
   return {
-    title: `${post.title} - Nick Treffiletti`,
-    description: post.summary,
+    title,
+    description,
     openGraph: {
-      title: post.title,
-      description: post.summary,
+      title,
+      description,
       type: 'article',
-      publishedTime: post.publishedAt,
-      authors: ['Nick Treffiletti'],
+      publishedTime,
+      url: `${baseUrl}/blog/${post.slug}`,
+      images: [
+        {
+          url: ogImage,
+        },
+      ],
     },
-  };
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogImage],
+    },
+  }
 }
 
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
+export default async function BlogPost({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  let post = getBlogPosts().find((post) => post.slug === slug)
 
-export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const post = await getPost(slug);
-  const posts = await getPosts();
-  
   if (!post) {
-    notFound();
+    notFound()
   }
 
-  // Find next post
-  const currentIndex = posts.findIndex(p => p.slug === post.slug);
-  const nextPost = currentIndex > 0 ? posts[currentIndex - 1] : null;
-
   return (
-    <SidebarLayoutContent
-      breadcrumbs={
-        <Breadcrumbs>
-          <BreadcrumbHome />
-          <BreadcrumbSeparator />
-          <Breadcrumb href="/blog">Blog</Breadcrumb>
-          <BreadcrumbSeparator />
-          <Breadcrumb>{post.title}</Breadcrumb>
-        </Breadcrumbs>
-      }
-    >
-      <article>
-        <header className="mt-10 sm:mt-14">
-          <h1 className="text-3xl/10 font-normal tracking-tight text-gray-950 dark:text-white">
-            {post.title}
-          </h1>
-          <div className="mt-6 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-            <time dateTime={post.publishedAt}>
-              {formatDate(post.publishedAt)}
-            </time>
-          </div>
-        </header>
-        
-        <div className="mt-12 prose prose-gray max-w-none dark:prose-invert">
-          <CustomMDX source={post.content} />
-        </div>
-      </article>
-
-      {nextPost && (
-        <div className="mt-16 border-t border-gray-200 pt-8 dark:border-gray-800">
-          <h3 className="text-lg font-semibold text-gray-950 dark:text-white">
-            Next Post
-          </h3>
-          <div className="mt-4">
-            <Link
-              href={`/blog/${nextPost.slug}`}
-              className="group block rounded-lg border border-gray-200 p-4 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700"
-            >
-              <h4 className="font-medium text-gray-950 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
-                {nextPost.title}
-              </h4>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                {nextPost.summary}
-              </p>
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* JSON-LD for SEO */}
+    <div className="max-w-3xl">
       <script
         type="application/ld+json"
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'BlogPosting',
-            headline: post.title,
-            description: post.summary,
+            headline: post.metadata.title,
+            datePublished: post.metadata.publishedAt,
+            dateModified: post.metadata.publishedAt,
+            description: post.metadata.summary,
+            image: post.metadata.image
+              ? `${baseUrl}${post.metadata.image}`
+              : `${baseUrl}/og?title=${encodeURIComponent(post.metadata.title)}`,
+            url: `${baseUrl}/blog/${post.slug}`,
             author: {
               '@type': 'Person',
               name: 'Nick Treffiletti',
             },
-            datePublished: post.publishedAt,
-            dateModified: post.publishedAt,
           }),
         }}
       />
-    </SidebarLayoutContent>
-  );
+      <h1 className="mb-2 text-3xl font-bold tracking-tight text-gray-950 dark:text-white">
+        {post.metadata.title}
+      </h1>
+      <div className="mb-8 flex items-center justify-between">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {formatDate(post.metadata.publishedAt)}
+        </p>
+      </div>
+      <article className="prose prose-gray dark:prose-invert max-w-none">
+        <CustomMDX source={post.content} />
+      </article>
+    </div>
+  )
 }

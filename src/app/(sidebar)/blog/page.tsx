@@ -1,77 +1,51 @@
-import {
-  Breadcrumb,
-  BreadcrumbHome,
-  Breadcrumbs,
-  BreadcrumbSeparator,
-} from '@/components/breadcrumbs';
-import { SidebarLayoutContent } from '@/components/sidebar-layout';
-import { getPosts } from '@/data/posts';
-import type { Metadata } from 'next';
-import Link from 'next/link';
+import Link from 'next/link'
+import { formatDate, getBlogPosts } from '@/lib/blog'
 
-export const metadata: Metadata = {
-  title: 'Blog - Nick Treffiletti',
-  description: 'Thoughts on software engineering, platform architecture, and building scalable systems.',
-};
-
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+export const metadata = {
+  title: 'Blog',
+  description: 'Read my blog.',
 }
 
-export default async function BlogPage() {
-  const posts = await getPosts();
+export default function BlogPage() {
+  let allBlogs = getBlogPosts()
 
   return (
-    <SidebarLayoutContent
-      breadcrumbs={
-        <Breadcrumbs>
-          <BreadcrumbHome />
-          <BreadcrumbSeparator />
-          <Breadcrumb>Blog</Breadcrumb>
-        </Breadcrumbs>
-      }
-    >
-      <h1 className="mt-10 text-3xl/10 font-normal tracking-tight text-gray-950 sm:mt-14 dark:text-white">
+    <div className="max-w-3xl">
+      <h1 className="mb-8 text-3xl font-bold tracking-tight text-gray-950 dark:text-white">
         Blog
       </h1>
-      <p className="mt-6 max-w-xl text-base/7 text-gray-700 dark:text-gray-400">
-        Thoughts on software engineering, platform architecture, and building scalable systems.
-      </p>
-      <div className="mt-16 space-y-12 pb-32">
-        {posts.map((post) => (
-          <article key={post.slug} className="group">
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                <time dateTime={post.publishedAt}>
-                  {formatDate(post.publishedAt)}
-                </time>
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-950 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
-                  <Link href={`/blog/${post.slug}`}>
-                    {post.title}
-                  </Link>
-                </h2>
-                <p className="mt-2 text-base text-gray-700 dark:text-gray-300">
-                  {post.summary}
+      <div className="flex flex-col gap-4">
+        {allBlogs
+          .sort((a, b) => {
+            if (
+              new Date(a.metadata.publishedAt) > new Date(b.metadata.publishedAt)
+            ) {
+              return -1
+            }
+            return 1
+          })
+          .map((post) => (
+            <Link
+              key={post.slug}
+              className="group flex flex-col space-y-1 rounded-lg p-4 transition-colors hover:bg-gray-950/5 dark:hover:bg-white/5"
+              href={`/blog/${post.slug}`}
+            >
+              <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <p className="text-base font-medium tracking-tight text-gray-950 group-hover:text-gray-700 dark:text-white dark:group-hover:text-gray-300">
+                  {post.metadata.title}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 md:w-[140px] md:text-right">
+                  {formatDate(post.metadata.publishedAt, false)}
                 </p>
               </div>
-              <div>
-                <Link
-                  href={`/blog/${post.slug}`}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                  Read more →
-                </Link>
-              </div>
-            </div>
-          </article>
-        ))}
+              {post.metadata.summary && (
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {post.metadata.summary}
+                </p>
+              )}
+            </Link>
+          ))}
       </div>
-    </SidebarLayoutContent>
-  );
+    </div>
+  )
 }
