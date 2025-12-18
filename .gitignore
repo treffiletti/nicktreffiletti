@@ -86,4 +86,8 @@ Thumbs.db
 tmp/
 temp/
 
+# Backup directories
+__backup_revert/
+*_backup_*/
+
 *~bak
