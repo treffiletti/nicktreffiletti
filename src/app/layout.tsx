@@ -28,30 +28,30 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Nick Treffiletti — Platform Architecture & Engineering",
-    template: "%s | Nick Treffiletti — Platform Architecture & Engineering",
+    default: "Nick Treffiletti — MCP, AI Agents & Platform Engineering",
+    template: "%s | Nick Treffiletti — MCP, AI Agents & Platform Engineering",
   },
   description:
-    "Opinionated essays on platform architecture, developer platforms, and cloud-native ops.",
+    "Deep dives into MCP servers, AI agent architecture, and platform engineering. Building the infrastructure for intelligent systems.",
   alternates: {
     canonical: "/",
     types: { "application/rss+xml": "/rss" },
   },
   openGraph: {
-    title: "Nick Treffiletti — Platform Architecture & Engineering",
+    title: "Nick Treffiletti — MCP, AI Agents & Platform Engineering",
     description:
-      "Opinionated essays on platform architecture, developer platforms, and cloud-native ops.",
+      "Deep dives into MCP servers, AI agent architecture, and platform engineering. Building the infrastructure for intelligent systems.",
     url: SITE_URL,
-    siteName: "Nick Treffiletti — Platform Architecture & Engineering",
+    siteName: "Nick Treffiletti — MCP, AI Agents & Platform Engineering",
     locale: "en_US",
     type: "website",
     images: [{ url: `${SITE_URL}/og`, width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Nick Treffiletti — Platform Architecture & Engineering",
+    title: "Nick Treffiletti — MCP, AI Agents & Platform Engineering",
     description:
-      "Opinionated essays on platform architecture, developer platforms, and cloud-native ops.",
+      "Deep dives into MCP servers, AI agent architecture, and platform engineering. Building the infrastructure for intelligent systems.",
     images: [`${SITE_URL}/og`],
   },
   authors: [{ name: "Nick Treffiletti", url: SITE_URL }],
