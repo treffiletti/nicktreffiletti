@@ -91,3 +91,7 @@ __backup_revert/
 *_backup_*/
 
 *~bak
+
+.ai/
+.github/
+__*
