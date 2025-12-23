@@ -17,7 +17,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Compass - The Ultimate Guide to Navigating Uncertainty",
+  title: "Nick Treffiletti — MCP, AI Agents & Platform Engineering",
   description:
     "A comprehensive journey that helps you navigate uncertainty and make choices aligned with your values and goals.",
 };

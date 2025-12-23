@@ -15,7 +15,7 @@ export function Breadcrumbs(props: React.ComponentProps<"nav">) {
 export function BreadcrumbHome() {
   return (
     <Link href="/" className="min-w-0 shrink-0 text-gray-950 dark:text-white">
-      Compass
+      NickTreffiletti.com
     </Link>
   );
 }
