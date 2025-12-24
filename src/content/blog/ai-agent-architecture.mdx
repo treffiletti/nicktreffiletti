@@ -25,6 +25,20 @@ The key differences:
 - **Goal-directed**: It's working toward an objective, not just responding to prompts
 - **Action-taking**: It can affect its environment, not just generate text
 
+### Agent Architecture Flow
+
+```mermaid
+flowchart LR
+  User -->|Intent| Agent
+  Agent --> Planner
+  Planner --> ToolSelector
+  ToolSelector --> Tools
+  Tools --> Agent
+  Agent --> Memory
+  Memory --> Agent
+  Agent -->|Response| User
+```
+
 ## Single-Agent Architecture with Tools
 
 The simplest agent architecture is one agent with access to tools. This is where most production systems start—and where many should stay.

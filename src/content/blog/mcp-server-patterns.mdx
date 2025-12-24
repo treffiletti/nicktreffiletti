@@ -9,6 +9,16 @@ I've built enough MCP servers to know what works and what doesn't. The specifica
 
 Here are the five patterns I use in every production MCP server.
 
+### MCP Request Flow
+
+```mermaid
+sequenceDiagram
+  Model->>MCP: Request capability
+  MCP->>Tool: Execute action
+  Tool-->>MCP: Result
+  MCP-->>Model: Structured response
+```
+
 ## Pattern 1: Tool-First Design
 
 When building an MCP server, the temptation is to think about your data first—what resources you want to expose, what information you have. This leads to resource-heavy servers that agents struggle to use effectively.

@@ -38,9 +38,7 @@ export async function generateMetadata({
     summary: description,
     image,
   } = post.metadata;
-  const ogImage = image
-    ? image
-    : `${baseUrl}/og?title=${encodeURIComponent(title)}`;
+  const ogImage = `${baseUrl}/api/og/blog/${slug}`;
 
   return {
     title: `${title} - Nick Treffiletti`,

@@ -50,6 +50,21 @@ This fragmentation had real costs:
 
 MCP changes this equation entirely.
 
+### Integration Complexity: Before and After MCP
+
+```mermaid
+flowchart LR
+  subgraph Without_MCP
+    Model1 --> ToolA
+    Model2 --> ToolB
+    Model3 --> ToolC
+  end
+
+  subgraph With_MCP
+    Models --> MCP --> Tools
+  end
+```
+
 ## Why It's Gaining Traction
 
 Three factors are accelerating MCP adoption:

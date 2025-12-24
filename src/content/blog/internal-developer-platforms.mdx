@@ -30,6 +30,17 @@ When done right, developers can:
 
 When done wrong, developers route around the platform and build shadow infrastructure.
 
+### Platform Layers
+
+```mermaid
+graph TD
+  Dev[Developer Experience] --> IDP
+  IDP --> CI[CI/CD]
+  IDP --> Infra[Cloud Infrastructure]
+  IDP --> Security
+  IDP --> Observability
+```
+
 ## The Golden Path Concept
 
 At the heart of successful IDPs is the golden path—the easy, blessed way to do common tasks.
