@@ -88,6 +88,12 @@ export default function RootLayout({
       )}
     >
       <head>
+        <link rel="icon" type="image/png" href="/public/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/public/favicon.svg" />
+        <link rel="shortcut icon" href="/public/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-title" content="NickTreffiletti" />
+        <link rel="manifest" href="/public/site.webmanifest" />
         {process.env.NODE_ENV === "production" && (
           <script
             data-goatcounter="https://analytics.nicktreffiletti.com/count"
