@@ -5,6 +5,7 @@
   --font-sans: var(--font-inter);
   --font-sans--font-feature-settings: "cv11";
   --font-mono: var(--font-geist-mono);
+  --font-orbitron: var(--font-orbitron);
 }
 
 @theme {

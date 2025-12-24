@@ -60,14 +60,15 @@ export default async function Page() {
           <div className="relative">
             <div className="px-4 pt-48 pb-12 lg:py-24">
               {/* <Logo className="h-8 fill-gray-950 dark:fill-white" /> */}
-              <p className="text-l sm:text-xl md:text-2xl text-gray-950 dark:text-white tracking-wide uppercase">
-                <span className="font-light">MCP SERVER:</span>
+                <p className="font-orbitron text-sm sm:text-base md:text-lg text-gray-950 dark:text-white tracking-[0.3em] uppercase">
+                <span className="font-black">:MCP</span>
+                <span className="font-thin opacity-70 ">SERVER:</span>
                 </p>
-                <p className="text-xl sm:text-2xl md:text-3xl text-gray-950 dark:text-white tracking-wide uppercase">
-                <span className="font-normal">From Zer</span>
-                <span className="font-normal inline-block scale-125 px-1">🄍</span>{" "}
-                <span className="font-bold">to Scale</span>
-              </p>
+                <p className="font-orbitron text-xl sm:text-2xl md:text-3xl text-gray-950 dark:text-white tracking-[0.2em] uppercase">
+                <span className="font-thin">From Zer</span>
+                <span className="font-thin inline-block scale-125 px-1 text-cyan-500 dark:text-cyan-400">🄍</span>{" "}
+                <span className="font-black bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent">to Scale</span>
+                </p>
               <h1 className="sr-only">Course overview</h1>
               <p className="mt-7 max-w-lg text-base/7 text-pretty text-gray-600 dark:text-gray-400">
                 A comprehensive course covering MCP server architecture, implementation patterns, and production deployment strategies for AI-powered applications.
