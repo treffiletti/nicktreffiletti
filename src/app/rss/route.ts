@@ -30,18 +30,26 @@ export async function GET() {
           <pubDate>${new Date(
             post.metadata.publishedAt
           ).toUTCString()}</pubDate>
+          <guid isPermaLink="true">${baseUrl}/blog/${post.slug}</guid>
+          ${post.metadata.image ? `<enclosure url="${post.metadata.image}" type="image/jpeg" />` : ''}
         </item>`
     )
     .join('\n')
 
   const rssFeed = `<?xml version="1.0" encoding="UTF-8" ?>
-  <rss version="2.0">
+  <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
         <title>Nick Treffiletti - MCP, AI Agents &amp; Platform Engineering</title>
         <link>${baseUrl}</link>
         <description>Deep dives into MCP servers, AI agent architecture, and platform engineering. Building the infrastructure for intelligent systems.</description>
         <language>en-us</language>
         <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+        <atom:link href="${baseUrl}/rss" rel="self" type="application/rss+xml" />
+        <image>
+          <url>${baseUrl}/og?title=${encodeURIComponent('Nick Treffiletti - MCP, AI Agents & Platform Engineering')}</url>
+          <title>Nick Treffiletti</title>
+          <link>${baseUrl}</link>
+        </image>
         ${itemsXml}
     </channel>
   </rss>`
