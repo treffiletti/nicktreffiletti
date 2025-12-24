@@ -1,6 +1,6 @@
 import { getBlogPosts } from '@/lib/blog'
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.SITE_URL || 'https://www.nicktreffiletti.com'
 
 function escapeXml(unsafe: string): string {
   return unsafe
@@ -31,7 +31,7 @@ export async function GET() {
             post.metadata.publishedAt
           ).toUTCString()}</pubDate>
           <guid isPermaLink="true">${baseUrl}/blog/${post.slug}</guid>
-          ${post.metadata.image ? `<enclosure url="${escapeXml(post.metadata.image)}" type="image/jpeg" />` : ''}
+          ${post.metadata.image ? `<enclosure url="${escapeXml(post.metadata.image.startsWith('http') ? post.metadata.image : baseUrl + post.metadata.image)}" type="image/png" />` : ''}
         </item>`
     )
     .join('\n')
