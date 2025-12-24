@@ -2,12 +2,22 @@
 title: 'MCP Server Patterns I Use in Production'
 publishedAt: '2024-12-15'
 summary: 'Battle-tested patterns for building reliable, maintainable MCP servers.'
-image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=1200&h=630&fit=crop'
+image: '/generated/hero/mcp-server-patterns.png'
 ---
 
 I've built enough MCP servers to know what works and what doesn't. The specification gives you the basics, but production systems require patterns that go beyond the happy path.
 
 Here are the five patterns I use in every production MCP server.
+
+### MCP Request Flow
+
+```mermaid
+sequenceDiagram
+  Model->>MCP: Request capability
+  MCP->>Tool: Execute action
+  Tool-->>MCP: Result
+  MCP-->>Model: Structured response
+```
 
 ## Pattern 1: Tool-First Design
 
