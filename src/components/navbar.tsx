@@ -61,6 +61,9 @@ function MobileNavigation({
               {[
                 ["Course", "/"],
                 ["About", "/about"],
+                ["Projects", "/projects"],
+                ["Speaking", "/speaking"],
+                ["Services", "/services"],
                 ["Interviews", "/interviews"],
                 ["Resources", "/resources"],
                 ["Blog", "/blog"],
@@ -143,6 +146,9 @@ function SiteNavigation() {
       <div className="flex items-center gap-x-6 text-sm/6 text-gray-950 max-lg:hidden dark:text-white">
         <Link href="/">Course</Link>
         <Link href="/about">About</Link>
+        <Link href="/projects">Projects</Link>
+        <Link href="/speaking">Speaking</Link>
+        <Link href="/services">Services</Link>
         <Link href="/interviews">Interviews</Link>
         <Link href="/resources">Resources</Link>
         <Link href="/blog">Blog</Link>
