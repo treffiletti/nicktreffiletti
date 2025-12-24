@@ -31,7 +31,7 @@ export async function GET() {
             post.metadata.publishedAt
           ).toUTCString()}</pubDate>
           <guid isPermaLink="true">${baseUrl}/blog/${post.slug}</guid>
-          ${post.metadata.image ? `<enclosure url="${post.metadata.image}" type="image/jpeg" />` : ''}
+          ${post.metadata.image ? `<enclosure url="${escapeXml(post.metadata.image)}" type="image/jpeg" />` : ''}
         </item>`
     )
     .join('\n')
