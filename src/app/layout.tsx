@@ -15,6 +15,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/cn";
+import { Footer } from "@/components/footer";
 
 const InterVariable = localFont({
   variable: "--font-inter",
@@ -130,7 +131,10 @@ export default function RootLayout({
             }),
           }}
         />
-        <div className="isolate">{children}</div>
+        <div className="isolate">
+          {children}
+          <Footer />
+        </div>
         <Analytics />
         <SpeedInsights />
       </body>

@@ -10,6 +10,7 @@ import { formatDate, getBlogPosts } from "@/lib/blog";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BlogViewTracker } from "@/components/blog-view-tracker";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
@@ -90,6 +91,7 @@ export default async function BlogPost({
         </Breadcrumbs>
       }
     >
+      <BlogViewTracker slug={slug} />
       <script
         type="application/ld+json"
         suppressHydrationWarning

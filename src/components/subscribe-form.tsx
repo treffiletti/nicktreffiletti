@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { trackEvent } from '@/lib/analytics'
 
 interface SubscribeFormProps {
   className?: string
@@ -56,6 +57,7 @@ export function SubscribeForm({
       if (data.ok) {
         setStatus('success')
         setEmail('')
+        trackEvent.newsletterSubscribe()
       } else {
         setStatus('error')
         setErrorMessage(data.error || 'Something went wrong')

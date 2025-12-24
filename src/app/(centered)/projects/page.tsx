@@ -6,6 +6,8 @@ import {
 } from "@/components/breadcrumbs";
 import { CenteredPageLayout } from "@/components/centered-layout";
 import { PageSection } from "@/components/page-section";
+import { GitHubRepos } from "@/components/github-repos";
+import { getGitHubRepos } from "@/lib/github";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -100,7 +102,9 @@ function ProjectCard({ project }: { project: Project }) {
   );
 }
 
-export default function Page() {
+export default async function Page() {
+  const repos = await getGitHubRepos('treffiletti', { perPage: 6 });
+
   return (
     <CenteredPageLayout
       breadcrumbs={
@@ -131,27 +135,22 @@ export default function Page() {
           </div>
         </PageSection>
 
-        <PageSection title={<h2>Open Source Contributions</h2>}>
+        <PageSection title={<h2>Recent Repositories</h2>}>
           <p className="text-sm/8 text-gray-600 dark:text-gray-400">
-            Active contributor to the MCP ecosystem and platform engineering tooling.
+            Live from GitHub - my latest public repositories and open source work.
           </p>
-          <div className="mt-8 max-w-2xl">
-            <p className="text-sm/7 text-gray-600 dark:text-gray-400">
-              Contributing to Model Context Protocol specifications, TypeScript and Python SDKs,
-              and building reference implementations for enterprise MCP server patterns. Also
-              maintaining integrations between MCP and popular developer platforms like Backstage
-              and internal developer portals.
-            </p>
-            <div className="mt-6">
-              <a
-                href="https://github.com/treffiletti"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-x-2 rounded-full bg-gray-950 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600"
-              >
-                View GitHub Profile →
-              </a>
-            </div>
+          <div className="mt-8">
+            <GitHubRepos repos={repos} />
+          </div>
+          <div className="mt-8">
+            <a
+              href="https://github.com/treffiletti"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-x-2 text-sm font-medium text-gray-600 hover:text-gray-950 dark:text-gray-400 dark:hover:text-white"
+            >
+              View all on GitHub →
+            </a>
           </div>
         </PageSection>
       </div>
