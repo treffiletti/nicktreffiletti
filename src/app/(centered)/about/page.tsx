@@ -29,21 +29,27 @@ export default function Page() {
         About
       </h1>
       <p className="mt-6 max-w-xl text-base/7 text-gray-600 dark:text-gray-400">
-        Engineering leader and API platform architect with 18+ years building large-scale software,
-        data platforms, and financial systems for enterprises.
+        Engineering leader, API Guru and AI architect with exhaustive experience designing and building
+        scalable platforms that serve millions. Passionate about developer experience, secure API design,
+        and leveraging AI to create intelligent, context-aware systems.        
       </p>
 
       <div className="mt-16 space-y-16">
         <PageSection title={<h2>Current Role</h2>}>
           <p className="text-sm/8 text-gray-600 dark:text-gray-400">
-            API Platform Architect & Kong Transformation Lead at Prudential Financial
+            AI & API Cloud Platform Solutions Architect at Prudential Financial.
           </p>
           <div className="mt-8 max-w-2xl">
             <p className="text-sm/7 text-gray-600 dark:text-gray-400">
-              Currently leading the migration of 2,700+ APIs from Apigee to Kong, establishing enterprise
-              standards for RESTful API design, security (OAuth2/OIDC, JWT), and versioning. Building
-              governance and observability tooling with Splunk and Dynatrace while integrating Microsoft
-              Entra and Ping Identity for unified authentication across the enterprise.
+              I'm part of the team migrating thousands of APIs from Apigee to Kong — a massive undertaking 
+              where success means nobody notices anything changed. My focus is building the tooling, 
+              automation, and governance standards that let us move at scale while minimizing collateral damage.
+            </p>
+            <p className="mt-4 text-sm/7 text-gray-600 dark:text-gray-400">
+              The work I'm most proud of is less visible: unified auth across the enterprise, 
+              observability that actually helps teams debug issues, and governance that doesn't 
+              slow people down. The goal is making secure, well-designed APIs the path of least 
+              resistance — not something developers have to fight for.
             </p>
           </div>
         </PageSection>
