@@ -28,9 +28,11 @@ export async function GET() {
   const rssFeed = `<?xml version="1.0" encoding="UTF-8" ?>
   <rss version="2.0">
     <channel>
-        <title>Nick Treffiletti's Blog</title>
+        <title>Nick Treffiletti - MCP, AI Agents & Platform Engineering</title>
         <link>${baseUrl}</link>
-        <description>Blog posts by Nick Treffiletti</description>
+        <description>Deep dives into MCP servers, AI agent architecture, and platform engineering. Building the infrastructure for intelligent systems.</description>
+        <language>en-us</language>
+        <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
         ${itemsXml}
     </channel>
   </rss>`
