@@ -10,6 +10,9 @@ import { IconButton } from "@/components/icon-button";
 import { ChevronDownIcon } from "@/icons/chevron-down-icon";
 import { CloseIcon } from "@/icons/close-icon";
 import { MenuIcon } from "@/icons/menu-icon";
+import { GitHubIcon } from "@/icons/github-icon";
+import { LinkedInIcon } from "@/icons/linkedin-icon";
+import { TwitterIcon } from "@/icons/twitter-icon";
 import {
   CloseButton,
   Dialog,
@@ -57,6 +60,10 @@ function MobileNavigation({
             <div className="flex flex-col gap-y-2">
               {[
                 ["Course", "/"],
+                ["About", "/about"],
+                ["Projects", "/projects"],
+                ["Speaking", "/speaking"],
+                ["Services", "/services"],
                 ["Interviews", "/interviews"],
                 ["Resources", "/resources"],
                 ["Blog", "/blog"],
@@ -70,6 +77,35 @@ function MobileNavigation({
                   {title}
                 </CloseButton>
               ))}
+            </div>
+            <div className="mt-6 flex flex-col gap-y-2">
+              <h3 className="px-4 py-1 text-sm/7 text-gray-500">Connect</h3>
+              <div className="flex items-center gap-x-4 px-4 py-2">
+                <a
+                  href="https://github.com/treffiletti"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400"
+                >
+                  <GitHubIcon />
+                </a>
+                <a
+                  href="https://linkedin.com/in/nicktreffiletti"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400"
+                >
+                  <LinkedInIcon />
+                </a>
+                <a
+                  href="https://x.com/iamnewyorknick"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400"
+                >
+                  <TwitterIcon />
+                </a>
+              </div>
             </div>
             <div className="mt-6 flex flex-col gap-y-2">
               <h3 className="px-4 py-1 text-sm/7 text-gray-500">Account</h3>
@@ -107,11 +143,41 @@ function SiteNavigation() {
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
       />
-      <div className="flex gap-x-6 text-sm/6 text-gray-950 max-lg:hidden dark:text-white">
+      <div className="flex items-center gap-x-6 text-sm/6 text-gray-950 max-lg:hidden dark:text-white">
         <Link href="/">Course</Link>
+        <Link href="/about">About</Link>
+        <Link href="/projects">Projects</Link>
+        <Link href="/speaking">Speaking</Link>
+        <Link href="/services">Services</Link>
         <Link href="/interviews">Interviews</Link>
         <Link href="/resources">Resources</Link>
         <Link href="/blog">Blog</Link>
+        <div className="flex items-center gap-x-3 ml-2">
+          <a
+            href="https://github.com/treffiletti"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400 transition-colors"
+          >
+            <GitHubIcon />
+          </a>
+          <a
+            href="https://linkedin.com/in/nicktreffiletti"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400 transition-colors"
+          >
+            <LinkedInIcon />
+          </a>
+          <a
+            href="https://x.com/iamnewyorknick"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400 transition-colors"
+          >
+            <TwitterIcon />
+          </a>
+        </div>
         <Dropdown>
           <DropdownButton className="inline-flex items-center gap-x-2 focus:not-data-focus:outline-none">
             Account

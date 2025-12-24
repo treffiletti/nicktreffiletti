@@ -1,0 +1,377 @@
+---
+title: 'Building Internal Developer Platforms That Developers Actually Use'
+publishedAt: '2024-12-05'
+summary: 'Golden paths, self-service infrastructure, and the principles behind successful internal developer platforms.'
+---
+
+I've seen internal developer platforms (IDPs) succeed spectacularly. I've also seen them fail spectacularly—millions spent on portals nobody uses, self-service infrastructure that's more complex than doing it manually, golden paths that lead to dead ends.
+
+The difference between success and failure isn't technology. It's understanding what developers actually need and designing around that reality.
+
+## What Is an Internal Developer Platform?
+
+An IDP is the layer between developers and infrastructure that enables self-service without sacrificing standards, security, or reliability.
+
+It's not:
+- Just a service catalog
+- Just Kubernetes
+- Just CI/CD
+- Just Backstage (though Backstage can be part of it)
+
+It's the **entire developer experience for building, deploying, and operating software** at your organization.
+
+When done right, developers can:
+- Spin up new services in minutes, not weeks
+- Deploy with confidence
+- Debug production issues themselves
+- Understand ownership and dependencies
+- Get insights into cost, performance, and reliability
+
+When done wrong, developers route around the platform and build shadow infrastructure.
+
+## The Golden Path Concept
+
+At the heart of successful IDPs is the golden path—the easy, blessed way to do common tasks.
+
+### Paved Roads, Not Guardrails
+
+Think of the golden path as a highway, not a cage:
+
+**Guardrails approach (fails)**:
+- You must use our template
+- You can only deploy to these regions
+- Your service must be structured exactly this way
+- No exceptions, talk to platform team for approval
+
+**Paved road approach (succeeds)**:
+- Here's a template that handles auth, logging, metrics, and deployment—use it if you want
+- Most teams deploy to us-east-1 for latency reasons, but you can choose
+- We recommend this service structure because it scales, but customize if needed
+- If you go off the path, you're responsible for what the platform normally handles
+
+The paved road is easy and fast. Going off-road is possible but harder.
+
+### Example: Service Creation
+
+**Without golden path**:
+```bash
+# Developer has to figure out:
+# - Repository structure
+# - CI/CD setup
+# - Kubernetes manifests
+# - Service mesh config
+# - Monitoring setup
+# - Log aggregation
+# - Secret management
+# - Database provisioning
+
+# Result: 2-3 days of setup, inconsistent across teams
+```
+
+**With golden path**:
+```bash
+# One command that handles everything
+platform create-service my-api \
+  --template node-api \
+  --database postgres
+
+# Result:
+# - Git repository created
+# - CI/CD configured
+# - Infrastructure provisioned
+# - Monitoring enabled
+# - Service deployed to dev
+# Ready to write code in 15 minutes
+```
+
+The golden path eliminates undifferentiated heavy lifting.
+
+## Key Components of an IDP
+
+Successful platforms consistently have these elements:
+
+### 1. Service Catalog
+
+A living registry of what exists and who owns it.
+
+**Not just a list** (developers ignore these):
+```yaml
+- name: user-service
+  owner: team-auth
+```
+
+**Rich, actionable metadata** (developers use these):
+```yaml
+services:
+  - name: user-service
+    owner: team-auth
+    oncall: pagerduty.com/team-auth
+    repository: github.com/company/user-service
+    endpoints:
+      - url: api.company.com/users
+        sla: 99.9%
+    dependencies:
+      - database: users-db (postgres)
+      - service: auth-service
+    metrics: grafana.com/dashboards/user-service
+    runbooks: wiki.company.com/user-service
+    cost: $2,400/month
+```
+
+Developers can answer:
+- Who owns this?
+- How do I contact them?
+- What does it depend on?
+- What depends on it?
+- Is it healthy?
+- How much does it cost?
+
+### 2. Self-Service Provisioning
+
+The ability to get infrastructure without tickets.
+
+**Template-based provisioning**:
+```typescript
+// Developer defines what they need
+const database = platform.provision({
+  type: 'postgres',
+  size: 'medium',
+  environment: 'production',
+  backup: true
+});
+
+// Platform handles:
+// - Provisioning in the right VPC
+// - Setting up backups
+// - Configuring monitoring
+// - Creating secrets
+// - Setting up access controls
+```
+
+**Infrastructure from Code** (IaC wrapped by platform):
+```yaml
+# platform.yaml - simplified IaC
+database:
+  type: postgres
+  size: medium
+  backups: daily
+
+cache:
+  type: redis
+  size: small
+  eviction: lru
+
+# Platform translates this to Terraform/CloudFormation/etc.
+# Developers don't write Terraform, they express intent
+```
+
+### 3. Deployment Pipelines
+
+Developers should deploy confidently without being deployment experts.
+
+**Progressive delivery by default**:
+```yaml
+deploy:
+  strategy: canary
+  steps:
+    - deploy: 5%
+      duration: 10m
+      metrics:
+        - error_rate_less_than: 1%
+        - latency_p99_less_than: 200ms
+    - deploy: 50%
+      duration: 20m
+    - deploy: 100%
+
+  rollback:
+    auto: true
+    on:
+      - error_rate_greater_than: 2%
+      - latency_p99_greater_than: 500ms
+```
+
+The platform handles the complexity. Developers get safety by default.
+
+### 4. Observability
+
+Metrics, logs, and traces without manual instrumentation.
+
+**Zero-config observability**:
+- Metrics automatically collected (RED: Rate, Errors, Duration)
+- Logs automatically aggregated
+- Traces automatically propagated
+- Dashboards automatically generated
+
+Developers get observability for free by using the golden path.
+
+### 5. Documentation & Runbooks
+
+Context-aware, always up-to-date documentation.
+
+**Generated from code and config**:
+- API docs from OpenAPI specs
+- Architecture diagrams from service mesh config
+- Dependency graphs from actual service calls
+- Runbooks linked from alerts
+
+Documentation that lives with the code and deploys with the service.
+
+## Common Pitfalls (And How to Avoid Them)
+
+### Pitfall 1: Building for Perfection
+
+**The mistake**: Spending years building the perfect platform before launch.
+
+**The fix**: Ship the minimum viable platform early. Iterate based on real usage.
+
+Start with:
+- Service creation from templates
+- Basic deployment pipeline
+- Simple service catalog
+
+Add complexity as needs emerge.
+
+### Pitfall 2: Forcing Adoption
+
+**The mistake**: Mandating the platform before it's genuinely better than alternatives.
+
+**The fix**: Make the platform so good that developers choose it voluntarily.
+
+Metrics of success:
+- % of new services using the platform (should be over 80%)
+- Time to first deploy (should be under 1 day)
+- Developer satisfaction (should be over 4/5)
+
+If these aren't met, the platform needs work, not mandates.
+
+### Pitfall 3: Ignoring the 80/20 Rule
+
+**The mistake**: Trying to handle every possible edge case.
+
+**The fix**: Optimize for the 80% case. Let the 20% go off the golden path.
+
+Most services need:
+- CRUD APIs
+- Database (Postgres or MySQL)
+- Caching (Redis)
+- Job queues
+- Standard deployment patterns
+
+Build for that. The machine learning team with special GPU needs can do their own thing.
+
+### Pitfall 4: Platform Team Knows Best
+
+**The mistake**: Building what the platform team thinks developers need.
+
+**The fix**: Build what developers actually need.
+
+**Talk to developers constantly**:
+- What takes too long?
+- What's confusing?
+- What do you route around?
+- What's more complex than it should be?
+
+Let usage data guide priorities, not assumptions.
+
+### Pitfall 5: Treating the Platform as a Product... But Not Really
+
+**The mistake**: Saying "the platform is a product" but not staffing or operating it like one.
+
+**The fix**: Treat it as a real product:
+- Product manager
+- User research
+- Roadmap based on customer needs
+- Support SLAs
+- Customer success tracking
+
+If you wouldn't accept this from an external vendor, don't accept it from your platform.
+
+## Measuring IDP Success
+
+Track these metrics to know if your platform is working:
+
+### Developer Metrics (DORA-adjacent)
+- **Deployment frequency**: How often teams deploy
+- **Lead time for changes**: Time from commit to production
+- **Time to restore service**: How quickly teams recover from failures
+- **Change failure rate**: % of deployments causing incidents
+
+Platform should improve all four.
+
+### Platform-Specific Metrics
+- **Time to first deploy**: For new services (target: under 1 day)
+- **Golden path adoption**: % of services using platform (target: over 80%)
+- **Support ticket volume**: Trend should be down as platform improves
+- **Developer satisfaction**: Regular surveys (target: over 4/5)
+
+### Business Metrics
+- **Infrastructure cost per service**: Platform should drive consistency and efficiency
+- **Time to market**: New features should ship faster
+- **Operational incidents**: Standardization should reduce outages
+
+## The Platform Engineering Team
+
+Who builds and runs the platform?
+
+**Not**: The ops team renamed to "platform team" doing the same work.
+
+**Yes**: A product-focused team that treats developers as customers.
+
+**Team composition** (for ~500 engineers):
+- 1 Product Manager
+- 6-8 Platform Engineers
+- 1-2 Technical Writers
+- 1 Developer Relations / Advocacy
+
+**Responsibilities**:
+- Build and maintain the platform
+- Create and maintain golden paths
+- Support developers using the platform
+- Improve based on feedback and metrics
+- Evangelize platform adoption
+
+## Real-World Example: The Service Creation Golden Path
+
+Here's what a polished golden path looks like:
+
+```bash
+$ platform create service payment-api
+
+✓ Created repository: github.com/company/payment-api
+✓ Configured CI/CD pipeline
+✓ Provisioned development database
+✓ Set up monitoring and alerting
+✓ Deployed to development environment
+
+Your service is live at: https://payment-api.dev.company.com
+
+Next steps:
+  1. Clone repository: git clone github.com/company/payment-api
+  2. Start coding: npm run dev
+  3. Deploy to production: platform deploy production
+
+Documentation: docs.company.com/payment-api
+Dashboard: grafana.company.com/payment-api
+Runbooks: wiki.company.com/payment-api
+```
+
+This is the experience that makes developers love the platform.
+
+## The Path Forward
+
+Building a successful IDP is a journey, not a destination. Platforms evolve as organizations and technology evolve.
+
+**Start with these principles**:
+1. **Make the easy way the right way**: Golden paths beat mandates
+2. **Optimize for the 80% case**: Don't let edge cases drive design
+3. **Ship early, iterate often**: Real usage beats theoretical perfection
+4. **Listen to developers**: They're your customers
+5. **Measure success**: Use data to guide improvements
+
+The best platforms fade into the background—developers barely notice them because everything just works.
+
+That's the goal.
+
+---
+
+Building or improving an internal developer platform? I'd love to discuss what's working and what isn't. Reach out on [X](https://x.com/iamnewyorknick) or [LinkedIn](https://linkedin.com/in/nicktreffiletti).
