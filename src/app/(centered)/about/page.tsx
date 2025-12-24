@@ -155,9 +155,10 @@ export default function Page() {
               and Williams Sonoma, always with a focus on empowering developers and delivering measurable results.
             </p>
             <p className="mt-4 text-sm/7 text-gray-600 dark:text-gray-400">
-              I hold a degree in Public Affairs & Policy from Syracuse University's Maxwell School, which
-              continues to inform how I think about technology's role in society and the importance of
-              building systems that serve the public good.
+              As a graduate of Syracuse University's prestigious Maxwell School of Citizenship and Public Affairs,
+              I bring a unique perspective to technology leadership—one that values both innovation and societal 
+              impact. This foundation has informed my approach to building platforms that not only meet technical 
+              requirements but also serve broader organizational goals.
             </p>
           </div>
         </PageSection>
