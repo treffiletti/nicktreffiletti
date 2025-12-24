@@ -60,6 +60,7 @@ function MobileNavigation({
             <div className="flex flex-col gap-y-2">
               {[
                 ["Course", "/"],
+                ["About", "/about"],
                 ["Interviews", "/interviews"],
                 ["Resources", "/resources"],
                 ["Blog", "/blog"],
@@ -94,7 +95,7 @@ function MobileNavigation({
                   <LinkedInIcon />
                 </a>
                 <a
-                  href="https://x.com/nicktreffiletti"
+                  href="https://x.com/iamnewyorknick"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400"
@@ -141,6 +142,7 @@ function SiteNavigation() {
       />
       <div className="flex items-center gap-x-6 text-sm/6 text-gray-950 max-lg:hidden dark:text-white">
         <Link href="/">Course</Link>
+        <Link href="/about">About</Link>
         <Link href="/interviews">Interviews</Link>
         <Link href="/resources">Resources</Link>
         <Link href="/blog">Blog</Link>
@@ -162,7 +164,7 @@ function SiteNavigation() {
             <LinkedInIcon />
           </a>
           <a
-            href="https://x.com/nicktreffiletti"
+            href="https://x.com/iamnewyorknick"
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400 transition-colors"
