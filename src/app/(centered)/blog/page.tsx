@@ -7,6 +7,7 @@ import {
 import { CenteredPageLayout } from "@/components/centered-layout";
 import { formatDate, getBlogPosts } from "@/lib/blog";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -64,29 +65,39 @@ export default function BlogPage() {
         </div>
       </div>
 
-      <div className="mt-16">
-        <div className="flex flex-col gap-6 max-w-3xl">
+      <div className="mt-16 pb-32">
+        <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 xl:grid-cols-3">
           {allBlogs.map((post) => (
             <Link
               key={post.slug}
-              className="group block rounded-lg border border-gray-200 p-6 transition-colors hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700"
+              className="group block"
               href={`/blog/${post.slug}`}
             >
-              <div className="flex flex-col gap-2">
-                <div className="flex items-start justify-between gap-4">
-                  <h2 className="text-lg font-semibold text-gray-950 group-hover:text-gray-700 dark:text-white dark:group-hover:text-gray-300">
-                    {post.metadata.title}
-                  </h2>
-                  <time className="flex-shrink-0 text-sm text-gray-500 dark:text-gray-400">
-                    {formatDate(post.metadata.publishedAt, false)}
-                  </time>
+              {post.metadata.image && (
+                <div className="relative">
+                  <Image
+                    src={post.metadata.image}
+                    width={400}
+                    height={225}
+                    alt=""
+                    className="aspect-video w-full rounded-lg bg-gray-950 object-cover dark:bg-gray-900"
+                  />
+                  <div className="absolute inset-0 rounded-lg outline-1 -outline-offset-1 outline-gray-950/10 dark:outline-white/10" />
                 </div>
-                {post.metadata.summary && (
-                  <p className="text-sm/6 text-gray-600 dark:text-gray-400">
-                    {post.metadata.summary}
-                  </p>
-                )}
+              )}
+              <div className="mt-4 flex items-start justify-between gap-3">
+                <h2 className="text-sm/6 font-semibold text-gray-950 group-hover:text-gray-700 dark:text-white dark:group-hover:text-gray-300">
+                  {post.metadata.title}
+                </h2>
+                <time className="flex-shrink-0 text-xs text-gray-500 dark:text-gray-400">
+                  {formatDate(post.metadata.publishedAt, false)}
+                </time>
               </div>
+              {post.metadata.summary && (
+                <p className="mt-2 text-sm/6 text-gray-600 dark:text-gray-400">
+                  {post.metadata.summary}
+                </p>
+              )}
             </Link>
           ))}
         </div>

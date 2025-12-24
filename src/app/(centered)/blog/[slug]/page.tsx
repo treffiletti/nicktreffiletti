@@ -7,6 +7,7 @@ import {
 import { CenteredPageLayout } from "@/components/centered-layout";
 import { CustomMDX } from "@/components/mdx";
 import { formatDate, getBlogPosts } from "@/lib/blog";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -113,6 +114,21 @@ export default async function BlogPost({
           }),
         }}
       />
+
+      {post.metadata.image && (
+        <div className="relative -mx-4 mt-10 sm:-mx-6 sm:mt-14">
+          <div className="relative h-64 overflow-hidden rounded-2xl sm:h-80 md:h-96">
+            <Image
+              src={post.metadata.image}
+              alt=""
+              fill
+              className="object-cover object-center"
+              priority
+            />
+            <div className="absolute inset-0 rounded-2xl outline-1 -outline-offset-1 outline-gray-950/10 dark:outline-white/10" />
+          </div>
+        </div>
+      )}
 
       <div className="mt-10 sm:mt-14">
         <h1 className="text-3xl/10 font-normal tracking-tight text-gray-950 dark:text-white">
