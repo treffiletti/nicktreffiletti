@@ -14,6 +14,10 @@ const nextConfig = {
   images: {
     remotePatterns: [
       new URL("https://assets.tailwindcss.com/templates/compass/**"),
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
     ],
   },
 };
