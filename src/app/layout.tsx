@@ -1,7 +1,14 @@
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
+import { Orbitron } from "next/font/google";
 import localFont from "next/font/local";
 import type React from "react";
+
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  variable: "--font-orbitron",
+  display: "swap",
+});
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -84,6 +91,7 @@ export default function RootLayout({
         GeistMono.variable,
         GeistSans.variable,
         InterVariable.variable,
+        orbitron.variable,
         "scroll-pt-16 font-sans antialiased dark:bg-gray-950",
       )}
     >
