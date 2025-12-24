@@ -1,0 +1,390 @@
+---
+title: 'AI Agent Architecture: From Single Tools to Multi-Agent Systems'
+publishedAt: '2024-12-10'
+summary: 'A practical guide to designing AI agent systems that scale from simple tool calls to complex multi-agent orchestration.'
+---
+
+The term "AI agent" gets thrown around loosely. Is it just an LLM with function calling? A complex multi-agent system? Something in between?
+
+After building systems across this spectrum, I've learned that agent architecture isn't binary—it's a progression. Understanding where you are on that progression, and where you need to be, is critical to building systems that work.
+
+## What Actually Defines an Agent?
+
+Let's start with a working definition:
+
+**An AI agent is a system that autonomously pursues goals by perceiving its environment, making decisions, and taking actions.**
+
+This distinguishes agents from simple LLM usage:
+
+- **Not an agent**: Asking ChatGPT to write code
+- **An agent**: A system that writes code, runs tests, fixes failures, and iterates until tests pass
+
+The key differences:
+- **Autonomy**: The agent decides what to do next
+- **Goal-directed**: It's working toward an objective, not just responding to prompts
+- **Action-taking**: It can affect its environment, not just generate text
+
+## Single-Agent Architecture with Tools
+
+The simplest agent architecture is one agent with access to tools. This is where most production systems start—and where many should stay.
+
+### The MCP Approach
+
+Model Context Protocol makes this pattern straightforward:
+
+```typescript
+// Agent has access to specific tools
+const agent = new Agent({
+  model: "claude-sonnet-4",
+  tools: [
+    databaseMCPServer,    // Query and modify database
+    apiMCPServer,         // Call external APIs
+    fileSystemMCPServer   // Read and write files
+  ]
+});
+
+// Agent autonomously uses tools to achieve goal
+await agent.run("Analyze user churn and create a retention campaign");
+```
+
+The agent:
+1. Breaks down the goal into steps
+2. Calls appropriate tools (query database, analyze data, write campaign)
+3. Iterates based on tool responses
+4. Returns final result
+
+### When This Works
+
+Single-agent architecture is sufficient when:
+- The task is bounded and well-defined
+- Tools cover the full capability surface needed
+- Failures can be handled with retries and error messages
+- No parallel execution needed across different contexts
+
+Most production use cases fall into this category.
+
+### Tool Calling Best Practices
+
+Make your tools agent-friendly:
+
+```typescript
+// Good: Clear purpose, typed inputs, useful descriptions
+{
+  name: "query_users",
+  description: "Search for users matching criteria. Returns user objects with id, email, name, and signup_date.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      email: {
+        type: "string",
+        description: "Filter by email (supports wildcards: user@*)"
+      },
+      signupAfter: {
+        type: "string",
+        format: "date",
+        description: "Filter users who signed up after this date (YYYY-MM-DD)"
+      },
+      limit: {
+        type: "number",
+        default: 100,
+        maximum: 1000,
+        description: "Maximum results to return"
+      }
+    }
+  }
+}
+```
+
+The agent can reason about when to use this tool and how to construct valid inputs.
+
+## Multi-Agent Orchestration Patterns
+
+When single agents hit limits, multi-agent systems become necessary. But they introduce complexity—only add agents when justified.
+
+### Pattern 1: Supervisor Architecture
+
+One supervisor agent coordinates multiple specialist agents.
+
+```
+         [Supervisor]
+              |
+      ________|________
+      |       |       |
+   [Agent A][Agent B][Agent C]
+```
+
+Example use case: Code review system
+- **Supervisor**: Coordinates the review process
+- **Security Agent**: Checks for vulnerabilities
+- **Performance Agent**: Analyzes performance implications
+- **Style Agent**: Verifies code standards
+
+```typescript
+class SupervisorAgent {
+  async review(code: string) {
+    // Supervisor delegates to specialists
+    const [security, performance, style] = await Promise.all([
+      this.securityAgent.analyze(code),
+      this.performanceAgent.analyze(code),
+      this.styleAgent.analyze(code)
+    ]);
+
+    // Supervisor synthesizes results
+    return this.synthesize({security, performance, style});
+  }
+}
+```
+
+**When to use**:
+- Clear division of responsibilities
+- Specialists have distinct domains
+- Results need aggregation
+
+### Pattern 2: Peer-to-Peer Architecture
+
+Agents communicate directly without central coordination.
+
+```
+[Agent A] <---> [Agent B]
+    ^               ^
+    |               |
+    v               v
+[Agent C] <---> [Agent D]
+```
+
+Example use case: Distributed monitoring system
+- Each agent monitors a different service
+- Agents share information about dependencies
+- Collective decision-making on alert severity
+
+```typescript
+class MonitorAgent {
+  async detectIssue(metric: Metric) {
+    if (this.isAnomalous(metric)) {
+      // Ask peer agents about their status
+      const peerStatuses = await this.queryPeers();
+
+      // Decide severity based on collective state
+      if (peerStatuses.many(s => s.degraded)) {
+        return { severity: "critical", scope: "system-wide" };
+      }
+    }
+  }
+}
+```
+
+**When to use**:
+- No natural hierarchy
+- Agents need real-time coordination
+- Distributed decision-making required
+
+### Pattern 3: Hierarchical Architecture
+
+Multi-level organization with delegation down the hierarchy.
+
+```
+       [Executive]
+           |
+    _______|_______
+    |             |
+[Manager A]   [Manager B]
+    |             |
+  __|__         __|__
+  |   |         |   |
+[W1][W2]      [W3][W4]
+```
+
+Example use case: Infrastructure provisioning
+- **Executive**: Understands full infrastructure request
+- **Managers**: Handle specific infrastructure domains (compute, network, storage)
+- **Workers**: Execute specific provisioning tasks
+
+**When to use**:
+- Complex, multi-phase workflows
+- Natural delegation structure
+- Different abstraction levels needed
+
+## Tool Calling Patterns Across Agents
+
+How agents interact with tools affects architecture significantly.
+
+### Shared Tool Access
+
+All agents use the same tool set:
+
+```typescript
+const sharedTools = [
+  databaseServer,
+  apiServer,
+  logServer
+];
+
+const agent1 = new Agent({ tools: sharedTools });
+const agent2 = new Agent({ tools: sharedTools });
+```
+
+**Advantages**:
+- Consistent capabilities
+- Simpler to reason about
+
+**Challenges**:
+- Potential conflicts (both agents modifying same data)
+- Need coordination mechanisms
+
+### Specialized Tool Access
+
+Each agent has domain-specific tools:
+
+```typescript
+const securityAgent = new Agent({
+  tools: [vulnerabilityScannerServer, secretDetectionServer]
+});
+
+const performanceAgent = new Agent({
+  tools: [profilerServer, benchmarkServer]
+});
+```
+
+**Advantages**:
+- Clear separation of concerns
+- Reduced complexity per agent
+
+**Challenges**:
+- Need inter-agent communication
+- Supervisor must understand which agent has which capabilities
+
+### MCP in Multi-Agent Systems
+
+MCP shines in multi-agent architectures because tools are decoupled from agents:
+
+```typescript
+// Same MCP server, different agents
+const databaseServer = new DatabaseMCPServer();
+
+// Agent A uses it for analytics
+const analyticsAgent = new Agent({
+  tools: [databaseServer, analyticsServer]
+});
+
+// Agent B uses it for CRUD operations
+const apiAgent = new Agent({
+  tools: [databaseServer, validationServer]
+});
+```
+
+The tool implementation is shared, but agent usage patterns differ.
+
+## When to Use Single vs. Multi-Agent
+
+Here's my decision framework:
+
+### Use Single Agent When:
+- Task has clear beginning and end
+- One "persona" or expertise domain needed
+- Tool set is cohesive
+- Failures can be handled linearly
+- Debugging complexity should be minimized
+
+**Example**: Customer support chatbot with database, email, and knowledge base tools.
+
+### Use Multi-Agent When:
+- Need parallel execution in different contexts
+- Distinct expertise domains required
+- Single agent context window becomes limiting
+- Different agents need different prompting strategies
+- Workflow naturally decomposes into stages
+
+**Example**: Code generation system where one agent writes code, another reviews security, another writes tests.
+
+## Practical Implementation Tips
+
+### 1. Start Simple, Add Complexity Only When Needed
+
+Begin with single agent. Add second agent only when you hit clear limits.
+
+### 2. Make Agent Boundaries Explicit
+
+```typescript
+// Good: Clear responsibility
+class SecurityReviewAgent {
+  async review(code: string): Promise<SecurityReport> {
+    // This agent ONLY does security review
+  }
+}
+
+// Bad: Unclear boundary
+class ReviewAgent {
+  async review(code: string): Promise<Report> {
+    // Does this do security? Performance? Style? All of them?
+  }
+}
+```
+
+### 3. Design Agent Communication Protocols
+
+If agents communicate, formalize how:
+
+```typescript
+type AgentMessage = {
+  from: string;
+  to: string;
+  type: 'request' | 'response' | 'notification';
+  payload: any;
+  correlationId: string;
+};
+```
+
+### 4. Implement Circuit Breakers Between Agents
+
+Prevent cascading failures:
+
+```typescript
+class AgentCoordinator {
+  async callAgent(agentId: string, task: Task) {
+    if (this.failures.get(agentId) > 3) {
+      throw new Error(`Agent ${agentId} is failing, circuit open`);
+    }
+    // ... call agent
+  }
+}
+```
+
+### 5. Comprehensive Observability
+
+Track agent interactions:
+
+```typescript
+await trace.span('agent-collaboration', async () => {
+  trace.setAttribute('supervisor', supervisorId);
+  trace.setAttribute('workers', workerIds);
+
+  const results = await coordinateWork();
+
+  trace.addEvent('collaboration-complete', {
+    successCount: results.filter(r => r.success).length,
+    totalDuration: elapsed
+  });
+});
+```
+
+## The Future: Agent Ecosystems
+
+We're heading toward agent ecosystems where:
+- Agents discover each other via registries
+- Tools are published as MCP servers anyone can use
+- Agents compose dynamically based on task requirements
+- Standard protocols govern inter-agent communication
+
+This is already emerging in the MCP ecosystem.
+
+## Start Where You Are
+
+Most production agent systems should start as single agents with tools. Add complexity only when justified.
+
+The architecture isn't about sophistication—it's about matching system complexity to problem complexity.
+
+Build the simplest agent system that solves your problem. Then iterate.
+
+---
+
+Building agent systems? I'd love to hear about your architecture challenges. Reach out on [X](https://x.com/iamnewyorknick) or check out my [course on MCP-based agent architectures](/).
