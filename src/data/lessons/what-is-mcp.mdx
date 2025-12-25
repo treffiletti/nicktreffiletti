@@ -1,0 +1,58 @@
+---
+title: 'What is Model Context Protocol?'
+description: 'Understanding MCP and why it matters for AI development'
+---
+
+# What is Model Context Protocol?
+
+Model Context Protocol (MCP) is an open standard created by Anthropic that enables seamless integration between AI applications and external data sources and tools. Think of it as a universal adapter that lets AI assistants like Claude connect to your databases, APIs, file systems, and business tools in a standardized way.
+
+## The Problem MCP Solves
+
+Before MCP, every AI application had to build custom integrations for each tool or data source it wanted to access. If you wanted your AI assistant to read from a database, fetch data from an API, or interact with a third-party service, you'd need to write bespoke code for each integration. This led to:
+
+- **Duplicated effort** across different AI applications
+- **Brittle integrations** that break when APIs change
+- **Security risks** from inconsistent approaches to authentication and authorization
+- **Limited scalability** as each new tool requires custom development
+
+MCP changes this by providing a standardized protocol for AI-tool communication.
+
+## How MCP Works
+
+At its core, MCP defines a common language that AI applications (called "clients" or "hosts") use to communicate with external services (called "servers"). Instead of each AI app implementing its own custom logic for every tool, they all speak MCP.
+
+Here's the basic flow:
+
+1. **An MCP server** exposes capabilities like tools, data resources, or prompt templates
+2. **An MCP client** (like Claude Desktop or your custom AI app) discovers these capabilities
+3. **The AI model** can then invoke tools, fetch resources, or use prompts through the standardized protocol
+4. **The MCP server** executes the request and returns structured results
+
+## Key Benefits
+
+**For Developers**: Write your integration once as an MCP server, and it works with any MCP-compatible AI application. This is similar to how writing a REST API lets any HTTP client consume it.
+
+**For Organizations**: Build a library of MCP servers that expose your internal tools and data. Any MCP-compatible AI can then leverage these capabilities without custom integration work.
+
+**For Users**: Install MCP servers like browser extensions. Once configured, your AI assistant gains new capabilities without needing to understand the underlying implementation.
+
+## Real-World Example
+
+Imagine you want Claude to help you analyze customer support tickets from your Zendesk instance. Without MCP, you'd need to:
+
+1. Write custom code to authenticate with Zendesk
+2. Implement API calls to fetch tickets
+3. Handle pagination, rate limiting, and errors
+4. Format the data for Claude to understand
+5. Repeat this process for every AI tool you use
+
+With MCP, you install a Zendesk MCP server once. Now Claude (or any MCP client) can query tickets, create responses, and update ticket status through simple tool calls, all handled by the standardized protocol.
+
+## The Bigger Picture
+
+MCP is part of a broader shift toward composable AI systems. Just as microservices architecture let us build complex systems from independent services, MCP enables AI applications to compose capabilities from independent tool providers.
+
+As AI agents become more autonomous and capable, having a reliable, secure, and standardized way to connect them to the world becomes critical. MCP provides that foundation.
+
+In the next lesson, we'll dive into the architecture of MCP systems and how the different components work together.

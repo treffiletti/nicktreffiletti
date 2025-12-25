@@ -1,0 +1,444 @@
+---
+title: 'Enterprise Integration Patterns'
+description: 'Integrating MCP servers into enterprise environments'
+---
+
+# Enterprise Integration Patterns
+
+Deploying MCP servers in enterprise environments requires additional considerations: authentication, authorization, compliance, audit logging, and integration with existing systems. In this lesson, we'll explore enterprise integration patterns.
+
+## Enterprise Authentication
+
+### OAuth 2.0 / OIDC Integration
+
+Integrate with enterprise identity providers:
+
+```typescript
+import { OAuth2Client } from '@modelcontextprotocol/sdk/auth/oauth2.js';
+import jwt from 'jsonwebtoken';
+
+interface AuthConfig {
+  issuer: string;
+  clientId: string;
+  clientSecret: string;
+  jwksUri: string;
+}
+
+class EnterpriseAuthHandler {
+  constructor(private config: AuthConfig) {}
+
+  async validateToken(token: string): Promise<UserContext> {
+    try {
+      // Verify JWT signature
+      const decoded = jwt.verify(token, await this.getPublicKey(), {
+        issuer: this.config.issuer,
+        audience: this.config.clientId
+      });
+
+      return {
+        userId: decoded.sub,
+        email: decoded.email,
+        roles: decoded.roles || [],
+        groups: decoded.groups || []
+      };
+    } catch (error) {
+      throw new Error('Invalid or expired token');
+    }
+  }
+
+  async getPublicKey(): Promise<string> {
+    // Fetch JWKS and extract public key
+    const response = await fetch(this.config.jwksUri);
+    const jwks = await response.json();
+    // Parse JWKS and return public key
+    // ...
+  }
+}
+
+// Use in server
+server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+  const authHeader = extra.headers?.['authorization'];
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('Missing or invalid authorization header');
+  }
+
+  const token = authHeader.substring(7);
+  const user = await authHandler.validateToken(token);
+
+  // Store user context for authorization checks
+  request.user = user;
+
+  // Process request
+  // ...
+});
+```
+
+### SAML Integration
+
+For SAML-based SSO:
+
+```typescript
+import * as saml from 'samlify';
+
+const sp = saml.ServiceProvider({
+  entityID: 'https://mcp-server.company.com',
+  assertionConsumerService: [{
+    Binding: saml.Constants.namespace.binding.post,
+    Location: 'https://mcp-server.company.com/saml/acs'
+  }]
+});
+
+const idp = saml.IdentityProvider({
+  metadata: fs.readFileSync('./idp-metadata.xml')
+});
+
+// Handle SAML response
+app.post('/saml/acs', async (req, res) => {
+  try {
+    const { extract } = await sp.parseLoginResponse(idp, 'post', req);
+
+    const user = {
+      userId: extract.nameID,
+      email: extract.attributes.email,
+      roles: extract.attributes.roles
+    };
+
+    // Create session token
+    const token = jwt.sign(user, process.env.JWT_SECRET!, { expiresIn: '8h' });
+
+    res.json({ token });
+  } catch (error) {
+    res.status(401).json({ error: 'SAML authentication failed' });
+  }
+});
+```
+
+## Role-Based Access Control
+
+Implement fine-grained authorization:
+
+```typescript
+enum Permission {
+  READ_DATA = 'data:read',
+  WRITE_DATA = 'data:write',
+  DELETE_DATA = 'data:delete',
+  ADMIN = 'admin'
+}
+
+const rolePermissions: Record<string, Permission[]> = {
+  viewer: [Permission.READ_DATA],
+  editor: [Permission.READ_DATA, Permission.WRITE_DATA],
+  admin: [Permission.READ_DATA, Permission.WRITE_DATA, Permission.DELETE_DATA, Permission.ADMIN]
+};
+
+function checkPermission(user: UserContext, required: Permission): boolean {
+  const userPermissions = user.roles.flatMap(role => rolePermissions[role] || []);
+  return userPermissions.includes(required);
+}
+
+// Tool-level authorization
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+  const user = request.user;
+
+  if (name === 'delete_records') {
+    if (!checkPermission(user, Permission.DELETE_DATA)) {
+      throw new Error('Permission denied: DELETE_DATA required');
+    }
+  }
+
+  if (name === 'query_sensitive_data') {
+    // Check specific data access
+    const resourceOwner = await getResourceOwner(args.resourceId);
+
+    if (user.userId !== resourceOwner && !checkPermission(user, Permission.ADMIN)) {
+      throw new Error('Permission denied: cannot access others\' data');
+    }
+  }
+
+  // Execute tool
+  // ...
+});
+```
+
+## Audit Logging
+
+Comprehensive audit trails for compliance:
+
+```typescript
+import winston from 'winston';
+
+interface AuditEvent {
+  timestamp: string;
+  userId: string;
+  email: string;
+  action: string;
+  resource: string;
+  result: 'success' | 'failure';
+  details?: any;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+const auditLogger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: 'audit.log' }),
+    // Also send to compliance system (Splunk, ELK, etc.)
+  ]
+});
+
+function logAudit(event: AuditEvent) {
+  auditLogger.info('audit_event', event);
+}
+
+server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+  const { name, arguments: args } = request.params;
+  const user = request.user;
+
+  const auditEvent: AuditEvent = {
+    timestamp: new Date().toISOString(),
+    userId: user.userId,
+    email: user.email,
+    action: name,
+    resource: JSON.stringify(args),
+    result: 'success',
+    ipAddress: extra.ipAddress,
+    userAgent: extra.userAgent
+  };
+
+  try {
+    const result = await executeTool(name, args);
+
+    logAudit(auditEvent);
+
+    return result;
+  } catch (error) {
+    auditEvent.result = 'failure';
+    auditEvent.details = { error: error.message };
+
+    logAudit(auditEvent);
+
+    throw error;
+  }
+});
+```
+
+## Data Residency & Compliance
+
+Handle data residency requirements:
+
+```typescript
+interface DataClassification {
+  pii: boolean;          // Personally Identifiable Information
+  phi: boolean;          // Protected Health Information
+  pci: boolean;          // Payment Card Industry
+  region: string[];      // Allowed regions for data storage
+}
+
+function classifyData(data: any): DataClassification {
+  // Analyze data and determine classification
+  return {
+    pii: containsPII(data),
+    phi: containsPHI(data),
+    pci: containsPCI(data),
+    region: ['us-east', 'eu-west']
+  };
+}
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { arguments: args } = request.params;
+
+  // Classify the data
+  const classification = classifyData(args);
+
+  // Check compliance
+  if (classification.pii || classification.phi) {
+    // Ensure encryption at rest
+    if (!process.env.ENCRYPTION_ENABLED) {
+      throw new Error('Encryption required for sensitive data');
+    }
+
+    // Check data residency
+    const currentRegion = process.env.REGION;
+    if (!classification.region.includes(currentRegion)) {
+      throw new Error(`Data residency violation: ${currentRegion} not allowed`);
+    }
+
+    // Log data access
+    logDataAccess({
+      userId: request.user.userId,
+      dataType: classification.pii ? 'PII' : 'PHI',
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  // Process request
+  // ...
+});
+```
+
+## Rate Limiting by Organization
+
+Multi-tenant rate limiting:
+
+```typescript
+import { RateLimiterRedis } from 'rate-limiter-flexible';
+import Redis from 'ioredis';
+
+const redis = new Redis();
+
+const rateLimiterByOrg = new RateLimiterRedis({
+  storeClient: redis,
+  keyPrefix: 'rate_limit_org',
+  points: 1000, // Requests
+  duration: 60  // Per minute
+});
+
+const rateLimiterByUser = new RateLimiterRedis({
+  storeClient: redis,
+  keyPrefix: 'rate_limit_user',
+  points: 100,
+  duration: 60
+});
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const user = request.user;
+
+  try {
+    // Check organization limit
+    await rateLimiterByOrg.consume(user.organizationId, 1);
+
+    // Check user limit
+    await rateLimiterByUser.consume(user.userId, 1);
+  } catch (rejRes) {
+    throw new Error(
+      `Rate limit exceeded. Try again in ${Math.ceil(rejRes.msBeforeNext / 1000)} seconds.`
+    );
+  }
+
+  // Process request
+  // ...
+});
+```
+
+## Integration with Enterprise Service Bus
+
+Connect to existing ESB infrastructure:
+
+```typescript
+import { Client as AMQPClient } from 'amqplib';
+
+class ESBIntegration {
+  private connection: AMQPClient;
+
+  async connect(url: string) {
+    this.connection = await AMQPClient.connect(url);
+  }
+
+  async publishEvent(event: {
+    type: string;
+    payload: any;
+    metadata: any;
+  }) {
+    const channel = await this.connection.createChannel();
+    const exchange = 'enterprise.events';
+
+    await channel.assertExchange(exchange, 'topic', { durable: true });
+
+    channel.publish(
+      exchange,
+      event.type,
+      Buffer.from(JSON.stringify(event)),
+      { persistent: true }
+    );
+  }
+
+  async consumeCommands(handler: (command: any) => Promise<void>) {
+    const channel = await this.connection.createChannel();
+    const queue = 'mcp.commands';
+
+    await channel.assertQueue(queue, { durable: true });
+
+    channel.consume(queue, async (msg) => {
+      if (msg) {
+        const command = JSON.parse(msg.content.toString());
+        await handler(command);
+        channel.ack(msg);
+      }
+    });
+  }
+}
+
+// Use in MCP server
+const esb = new ESBIntegration();
+await esb.connect(process.env.AMQP_URL!);
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  // Execute tool
+  const result = await executeTool(request.params.name, request.params.arguments);
+
+  // Publish event to ESB
+  await esb.publishEvent({
+    type: 'mcp.tool.executed',
+    payload: {
+      tool: request.params.name,
+      user: request.user.userId,
+      result: result
+    },
+    metadata: {
+      timestamp: new Date().toISOString(),
+      source: 'mcp-server'
+    }
+  });
+
+  return result;
+});
+```
+
+## Secrets Management
+
+Integrate with enterprise secrets managers:
+
+```typescript
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+
+class SecretsManager {
+  private client: SecretsManagerClient;
+
+  constructor() {
+    this.client = new SecretsManagerClient({ region: 'us-east-1' });
+  }
+
+  async getSecret(secretName: string): Promise<string> {
+    const command = new GetSecretValueCommand({ SecretId: secretName });
+    const response = await this.client.send(command);
+
+    if (response.SecretString) {
+      return response.SecretString;
+    }
+
+    throw new Error(`Secret ${secretName} not found`);
+  }
+}
+
+// Usage
+const secretsManager = new SecretsManager();
+const dbPassword = await secretsManager.getSecret('prod/database/password');
+const apiKey = await secretsManager.getSecret('prod/external-api/key');
+```
+
+## Best Practices
+
+1. **Use enterprise SSO**: OAuth2, SAML, or OIDC
+2. **Implement RBAC**: Fine-grained role-based access control
+3. **Audit everything**: Comprehensive logging for compliance
+4. **Encrypt at rest**: For sensitive data (PII, PHI, PCI)
+5. **Rate limit**: Per user and per organization
+6. **Secrets management**: Never hardcode credentials
+7. **Data classification**: Automatically classify and handle data appropriately
+8. **Multi-tenancy**: Isolate data between organizations
+
+Enterprise integration ensures your MCP servers meet organizational security, compliance, and operational requirements. In the final lesson, we'll explore the future of MCP.

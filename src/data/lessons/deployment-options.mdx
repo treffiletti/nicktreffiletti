@@ -1,0 +1,398 @@
+---
+title: 'Deployment Strategies'
+description: 'Options for deploying MCP servers from local to cloud'
+---
+
+# Deployment Strategies
+
+MCP servers can be deployed in various ways depending on your use case. In this lesson, we'll explore deployment options from local development to cloud production.
+
+## Local Deployment
+
+### stdio Servers on User Machines
+
+The simplest deployment: users run your server as a local process.
+
+**Package as npm module:**
+
+```json
+{
+  "name": "my-mcp-server",
+  "version": "1.0.0",
+  "bin": {
+    "my-mcp-server": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  }
+}
+```
+
+Users install via:
+
+```bash
+npm install -g my-mcp-server
+```
+
+And configure in Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "my-mcp-server",
+      "args": []
+    }
+  }
+}
+```
+
+**Pros:**
+- Simple deployment
+- No network configuration
+- Fast (local IPC)
+- Works offline
+
+**Cons:**
+- Each user runs their own instance
+- Hard to update centrally
+- Resource consumption on user machines
+
+### Python Packages
+
+For Python MCP servers:
+
+```toml
+# pyproject.toml
+[project]
+name = "my-mcp-server"
+version = "1.0.0"
+
+[project.scripts]
+my-mcp-server = "my_mcp_server.main:main"
+```
+
+Users install via:
+
+```bash
+pip install my-mcp-server
+```
+
+## Containerization
+
+### Docker
+
+Package your server in a container for consistent deployment:
+
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY dist ./dist
+
+EXPOSE 3000
+
+CMD ["node", "dist/index.js"]
+```
+
+Build and run:
+
+```bash
+docker build -t my-mcp-server .
+docker run -p 3000:3000 my-mcp-server
+```
+
+**With Docker Compose:**
+
+```yaml
+version: '3.8'
+
+services:
+  mcp-server:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://db:5432/mydb
+      - API_KEY=${API_KEY}
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:
+```
+
+## Cloud Deployment
+
+### Virtual Machines (EC2, Compute Engine)
+
+Deploy on traditional VMs:
+
+```bash
+# On EC2 instance
+git clone https://github.com/you/my-mcp-server
+cd my-mcp-server
+npm install
+npm run build
+
+# Use PM2 for process management
+npm install -g pm2
+pm2 start dist/index.js --name mcp-server
+pm2 save
+pm2 startup
+```
+
+**Pros:**
+- Full control
+- Predictable performance
+- Good for stateful servers
+
+**Cons:**
+- Manual scaling
+- Infrastructure management
+- Higher baseline cost
+
+### Container Orchestration (Kubernetes)
+
+For large-scale deployments:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mcp-server
+  template:
+    metadata:
+      labels:
+        app: mcp-server
+    spec:
+      containers:
+      - name: mcp-server
+        image: my-mcp-server:1.0.0
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: mcp-secrets
+              key: database-url
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-server-service
+spec:
+  selector:
+    app: mcp-server
+  ports:
+  - port: 80
+    targetPort: 3000
+  type: LoadBalancer
+```
+
+**Pros:**
+- Auto-scaling
+- Self-healing
+- Advanced routing
+- Industry standard
+
+**Cons:**
+- Complex setup
+- Operational overhead
+- Cost for smaller deployments
+
+### Serverless (AWS Lambda, Cloud Functions)
+
+Deploy as serverless functions for HTTP-based MCP:
+
+```typescript
+// Lambda handler
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+
+const server = new Server(
+  { name: 'lambda-mcp-server', version: '1.0.0' },
+  { capabilities: { tools: {} } }
+);
+
+// Register handlers
+// ...
+
+export const handler = async (
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
+  try {
+    const request = JSON.parse(event.body || '{}');
+    const response = await server.handleRequest(request);
+
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(response)
+    };
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message })
+    };
+  }
+};
+```
+
+**Pros:**
+- Zero infrastructure management
+- Pay per use
+- Automatic scaling
+- Low baseline cost
+
+**Cons:**
+- Cold starts
+- Execution time limits
+- Not suitable for stdio transport
+- Stateless only
+
+### Platform as a Service (Railway, Render, Fly.io)
+
+Simplified cloud deployment:
+
+**Railway:**
+
+```toml
+# railway.toml
+[build]
+builder = "DOCKERFILE"
+
+[deploy]
+healthcheckPath = "/health"
+restartPolicyType = "ON_FAILURE"
+```
+
+**Render:**
+
+```yaml
+# render.yaml
+services:
+  - type: web
+    name: mcp-server
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+```
+
+**Pros:**
+- Easy deployment (git push)
+- Managed infrastructure
+- Good for small to medium scale
+- Affordable
+
+**Cons:**
+- Less control than VMs
+- Platform lock-in
+- Limited customization
+
+## Configuration Management
+
+Use environment-based configuration:
+
+```typescript
+interface Config {
+  port: number;
+  databaseUrl: string;
+  apiKey: string;
+  logLevel: string;
+}
+
+function loadConfig(): Config {
+  return {
+    port: parseInt(process.env.PORT || '3000'),
+    databaseUrl: process.env.DATABASE_URL || '',
+    apiKey: process.env.API_KEY || '',
+    logLevel: process.env.LOG_LEVEL || 'info'
+  };
+}
+
+// Validate configuration
+const config = loadConfig();
+
+if (!config.databaseUrl) {
+  throw new Error('DATABASE_URL environment variable is required');
+}
+```
+
+## Deployment Checklist
+
+Before production deployment:
+
+- [ ] Environment variables configured
+- [ ] Secrets managed securely (not in code)
+- [ ] Health check endpoint implemented
+- [ ] Logging configured (structured logs)
+- [ ] Monitoring and alerts set up
+- [ ] Error tracking configured (Sentry, etc.)
+- [ ] Rate limiting enabled
+- [ ] HTTPS/TLS configured (for remote servers)
+- [ ] Backup strategy for data
+- [ ] Rollback plan documented
+- [ ] Load testing completed
+- [ ] Security audit performed
+
+## Choosing a Deployment Strategy
+
+**Local stdio:**
+- Desktop tools
+- Personal automation
+- Offline use cases
+
+**Containerized on VMs:**
+- Enterprise deployments
+- Complex dependencies
+- Stateful services
+
+**Kubernetes:**
+- Large scale
+- Multi-tenant
+- High availability requirements
+
+**Serverless:**
+- Simple HTTP APIs
+- Variable load
+- Cost optimization
+
+**PaaS (Railway/Render):**
+- Startups/side projects
+- Rapid iteration
+- Simple deployments
+
+Each deployment strategy has trade-offs. Choose based on your scale, budget, and operational capabilities.
+
+With this, you've completed the Production Patterns module. In the final module, we'll explore advanced topics like multi-server orchestration and enterprise integration.

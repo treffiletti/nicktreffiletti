@@ -1,0 +1,334 @@
+---
+title: 'Security Considerations'
+description: 'Securing your MCP servers and protecting sensitive operations'
+---
+
+# Security Considerations
+
+MCP servers often access sensitive data and perform critical operations. Security must be a core consideration from the start. In this lesson, we'll explore essential security practices for MCP servers.
+
+## The AI Trust Boundary
+
+A critical concept: **Never trust AI-generated input without validation**.
+
+When an AI calls your tools, the arguments it provides are AI-generated. They might be:
+- Malformed (the AI misunderstood the schema)
+- Malicious (if the AI was manipulated through prompt injection)
+- Inappropriate (the AI made poor decisions)
+
+Always validate inputs as if they came from an untrusted external API.
+
+## Input Validation
+
+### Schema Validation
+
+JSON Schema provides a first line of defense, but don't rely on it exclusively:
+
+```typescript
+// JSON Schema ensures structure
+const schema = {
+  type: "object",
+  properties: {
+    email: { type: "string", format: "email" },
+    age: { type: "integer", minimum: 0, maximum: 150 }
+  },
+  required: ["email", "age"]
+};
+
+// But add application-level validation too
+function validateEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailRegex.test(email)) {
+    throw new Error("Invalid email format");
+  }
+
+  // Additional checks: length, domain whitelist, etc.
+  if (email.length > 254) {
+    throw new Error("Email too long");
+  }
+
+  return true;
+}
+```
+
+### SQL Injection Prevention
+
+Always use parameterized queries:
+
+```typescript
+// WRONG - Vulnerable to SQL injection
+const query = `SELECT * FROM users WHERE email = '${email}'`;
+
+// RIGHT - Parameterized query
+const query = "SELECT * FROM users WHERE email = ?";
+const results = await db.query(query, [email]);
+```
+
+In Python with SQLite:
+
+```python
+# WRONG
+cursor.execute(f"SELECT * FROM users WHERE email = '{email}'")
+
+# RIGHT
+cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+```
+
+### Path Traversal Prevention
+
+Validate file paths to prevent directory traversal:
+
+```typescript
+import path from "path";
+
+function validateFilePath(userPath: string, baseDir: string): string {
+  // Resolve to absolute path
+  const resolvedPath = path.resolve(baseDir, userPath);
+
+  // Ensure it's within baseDir
+  if (!resolvedPath.startsWith(baseDir)) {
+    throw new Error("Access denied: path outside allowed directory");
+  }
+
+  return resolvedPath;
+}
+
+// Usage
+const safePath = validateFilePath(
+  request.arguments.path,
+  "/allowed/directory"
+);
+const content = await fs.readFile(safePath, "utf-8");
+```
+
+## Authentication & Authorization
+
+### Client Authentication
+
+For remote MCP servers (HTTP/SSE), implement authentication:
+
+```typescript
+import { createServer } from "http";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+
+const server = createServer(async (req, res) => {
+  // Check authentication header
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    res.writeHead(401, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Unauthorized" }));
+    return;
+  }
+
+  const token = authHeader.substring(7);
+
+  // Validate token
+  const user = await validateToken(token);
+  if (!user) {
+    res.writeHead(401, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Invalid token" }));
+    return;
+  }
+
+  // Proceed with MCP handling
+  // ...
+});
+```
+
+### Tool-Level Authorization
+
+Different users may have different permissions:
+
+```typescript
+server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+  const { name, arguments: args } = request.params;
+
+  // Extract user from context
+  const user = extra.user;
+
+  if (name === "delete_database") {
+    // Only admins can delete
+    if (!user.roles.includes("admin")) {
+      throw new Error("Permission denied: admin role required");
+    }
+  }
+
+  if (name === "view_salary") {
+    // Only HR or the user themselves
+    const targetUserId = args.userId;
+    if (!user.roles.includes("hr") && user.id !== targetUserId) {
+      throw new Error("Permission denied: cannot view other salaries");
+    }
+  }
+
+  // Execute tool
+  // ...
+});
+```
+
+## Secrets Management
+
+Never hardcode secrets in your server code:
+
+```typescript
+// WRONG
+const apiKey = "sk-1234567890abcdef";
+
+// RIGHT
+const apiKey = process.env.API_KEY;
+
+if (!apiKey) {
+  throw new Error("API_KEY environment variable not set");
+}
+```
+
+For local development, use `.env` files (and add `.env` to `.gitignore`):
+
+```bash
+# .env
+DATABASE_URL=postgresql://localhost/mydb
+API_KEY=sk-1234567890abcdef
+```
+
+```typescript
+import dotenv from "dotenv";
+dotenv.config();
+
+const dbUrl = process.env.DATABASE_URL;
+```
+
+## Rate Limiting
+
+Prevent abuse through rate limiting:
+
+```typescript
+const rateLimits = new Map();
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const userLimits = rateLimits.get(userId) || { count: 0, resetAt: now + 60000 };
+
+  if (now > userLimits.resetAt) {
+    // Reset window
+    userLimits.count = 0;
+    userLimits.resetAt = now + 60000;
+  }
+
+  if (userLimits.count >= 100) { // 100 requests per minute
+    return false;
+  }
+
+  userLimits.count++;
+  rateLimits.set(userId, userLimits);
+  return true;
+}
+
+server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+  const userId = extra.user.id;
+
+  if (!checkRateLimit(userId)) {
+    throw new Error("Rate limit exceeded. Please try again later.");
+  }
+
+  // Process request
+  // ...
+});
+```
+
+## Logging & Audit Trails
+
+Log security-relevant events:
+
+```typescript
+import winston from "winston";
+
+const logger = winston.createLogger({
+  level: "info",
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: "audit.log" }),
+  ],
+});
+
+server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+  const { name, arguments: args } = request.params;
+  const user = extra.user;
+
+  // Log tool calls
+  logger.info("Tool called", {
+    tool: name,
+    user: user.id,
+    timestamp: new Date().toISOString(),
+    arguments: args, // Be careful logging sensitive data
+  });
+
+  // Execute tool
+  // ...
+});
+```
+
+## Transport Security
+
+### Use TLS for Remote Servers
+
+Always use HTTPS for remote MCP servers:
+
+```typescript
+import https from "https";
+import fs from "fs";
+
+const options = {
+  key: fs.readFileSync("private-key.pem"),
+  cert: fs.readFileSync("certificate.pem"),
+};
+
+https.createServer(options, app).listen(443);
+```
+
+### stdio Security
+
+For stdio servers, security comes from process isolation. Ensure:
+- The server process runs with minimal privileges
+- File system access is restricted to necessary directories
+- Environment variables don't expose secrets to subprocesses
+
+## Principle of Least Privilege
+
+Only expose what's necessary:
+
+```typescript
+// WRONG - Overly powerful tool
+{
+  name: "execute_sql",
+  description: "Execute arbitrary SQL"
+}
+
+// RIGHT - Specific, limited tools
+{
+  name: "search_users",
+  description: "Search users by name or email"
+},
+{
+  name: "update_user_email",
+  description: "Update a user's email address"
+}
+```
+
+## Security Checklist
+
+Before deploying an MCP server:
+
+- [ ] All inputs validated beyond JSON Schema
+- [ ] SQL queries use parameters, not string concatenation
+- [ ] File paths validated against directory traversal
+- [ ] Secrets loaded from environment, not hardcoded
+- [ ] Authentication required for remote access
+- [ ] Authorization checks on sensitive operations
+- [ ] Rate limiting implemented
+- [ ] Security events logged
+- [ ] TLS/HTTPS for remote servers
+- [ ] Dependencies up to date (run `npm audit` or `pip check`)
+
+Security is not optional. In the next module, we'll explore production patterns including error handling, observability, and deployment strategies.

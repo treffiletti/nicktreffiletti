@@ -1,0 +1,419 @@
+---
+title: 'Testing MCP Servers'
+description: 'Unit testing, integration testing, and end-to-end testing strategies'
+---
+
+# Testing MCP Servers
+
+Comprehensive testing ensures your MCP server works correctly and continues to work as it evolves. In this lesson, we'll explore testing strategies at different levels.
+
+## Unit Testing Tools
+
+Test individual tool implementations independently from the MCP protocol:
+
+```typescript
+import { describe, it, expect } from 'vitest';
+
+// Tool implementation (separated from MCP handler)
+export async function calculateTool(args: {
+  operation: string;
+  a: number;
+  b: number;
+}): Promise<string> {
+  const { operation, a, b } = args;
+
+  switch (operation) {
+    case 'add':
+      return `${a} + ${b} = ${a + b}`;
+    case 'subtract':
+      return `${a} - ${b} = ${a - b}`;
+    case 'multiply':
+      return `${a} * ${b} = ${a * b}`;
+    case 'divide':
+      if (b === 0) throw new Error('Division by zero');
+      return `${a} / ${b} = ${a / b}`;
+    default:
+      throw new Error(`Unknown operation: ${operation}`);
+  }
+}
+
+// Unit tests
+describe('calculateTool', () => {
+  it('should add two numbers', async () => {
+    const result = await calculateTool({ operation: 'add', a: 5, b: 3 });
+    expect(result).toBe('5 + 3 = 8');
+  });
+
+  it('should throw on division by zero', async () => {
+    await expect(
+      calculateTool({ operation: 'divide', a: 5, b: 0 })
+    ).rejects.toThrow('Division by zero');
+  });
+
+  it('should throw on unknown operation', async () => {
+    await expect(
+      calculateTool({ operation: 'modulo', a: 5, b: 3 })
+    ).rejects.toThrow('Unknown operation');
+  });
+});
+```
+
+## Integration Testing
+
+Test the full MCP request/response flow:
+
+```typescript
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+
+describe('MCP Server Integration', () => {
+  let server: Server;
+
+  beforeEach(() => {
+    server = new Server({ name: 'test-server', version: '1.0.0' }, {
+      capabilities: { tools: {} }
+    });
+
+    // Register handlers
+    server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      const { name, arguments: args } = request.params;
+
+      if (name === 'calculate') {
+        const result = await calculateTool(args);
+        return {
+          content: [{ type: 'text', text: result }]
+        };
+      }
+
+      throw new Error(`Unknown tool: ${name}`);
+    });
+  });
+
+  it('should handle tool calls correctly', async () => {
+    const response = await server.request({
+      method: 'tools/call',
+      params: {
+        name: 'calculate',
+        arguments: { operation: 'add', a: 5, b: 3 }
+      }
+    });
+
+    expect(response.content[0].text).toBe('5 + 3 = 8');
+  });
+
+  it('should return error for unknown tool', async () => {
+    await expect(
+      server.request({
+        method: 'tools/call',
+        params: {
+          name: 'unknown_tool',
+          arguments: {}
+        }
+      })
+    ).rejects.toThrow('Unknown tool');
+  });
+});
+```
+
+## Testing Resources
+
+Test resource listing and retrieval:
+
+```typescript
+describe('Resource Handlers', () => {
+  it('should list available resources', async () => {
+    const response = await server.request({
+      method: 'resources/list'
+    });
+
+    expect(response.resources).toContainEqual({
+      uri: 'config://settings',
+      name: 'Application Settings',
+      mimeType: 'application/json'
+    });
+  });
+
+  it('should read resource content', async () => {
+    const response = await server.request({
+      method: 'resources/read',
+      params: { uri: 'config://settings' }
+    });
+
+    expect(response.contents[0].mimeType).toBe('application/json');
+    expect(JSON.parse(response.contents[0].text)).toHaveProperty('version');
+  });
+
+  it('should error on non-existent resource', async () => {
+    await expect(
+      server.request({
+        method: 'resources/read',
+        params: { uri: 'invalid://resource' }
+      })
+    ).rejects.toThrow('Resource not found');
+  });
+});
+```
+
+## Mocking External Dependencies
+
+Use mocks for external services:
+
+```typescript
+import { vi } from 'vitest';
+
+// Mock database
+const mockDb = {
+  query: vi.fn()
+};
+
+describe('Database Tools', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should query users from database', async () => {
+    mockDb.query.mockResolvedValue([
+      { id: 1, name: 'Alice', email: 'alice@example.com' }
+    ]);
+
+    const result = await queryUsersTool({ nameFilter: 'Alice' });
+
+    expect(mockDb.query).toHaveBeenCalledWith(
+      'SELECT id, name, email FROM users WHERE name LIKE ?',
+      ['%Alice%']
+    );
+
+    expect(result).toContain('Alice');
+  });
+
+  it('should handle database errors', async () => {
+    mockDb.query.mockRejectedValue(new Error('Connection timeout'));
+
+    await expect(
+      queryUsersTool({ nameFilter: 'Alice' })
+    ).rejects.toThrow('Connection timeout');
+  });
+});
+```
+
+## End-to-End Testing
+
+Test with a real client connection:
+
+```typescript
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { spawn } from 'child_process';
+
+describe('E2E Tests', () => {
+  let serverProcess: any;
+  let client: Client;
+
+  beforeAll(async () => {
+    // Start server process
+    serverProcess = spawn('node', ['dist/index.js']);
+
+    // Create client
+    client = new Client({
+      name: 'test-client',
+      version: '1.0.0'
+    });
+
+    // Connect via stdio
+    await client.connect({
+      stdin: serverProcess.stdout,
+      stdout: serverProcess.stdin
+    });
+  });
+
+  afterAll(async () => {
+    await client.close();
+    serverProcess.kill();
+  });
+
+  it('should list tools', async () => {
+    const response = await client.request({
+      method: 'tools/list'
+    });
+
+    expect(response.tools).toHaveLength(2);
+    expect(response.tools[0].name).toBe('calculate');
+  });
+
+  it('should execute tools', async () => {
+    const response = await client.request({
+      method: 'tools/call',
+      params: {
+        name: 'calculate',
+        arguments: { operation: 'multiply', a: 6, b: 7 }
+      }
+    });
+
+    expect(response.content[0].text).toContain('42');
+  });
+});
+```
+
+## Testing Error Scenarios
+
+Explicitly test error handling:
+
+```typescript
+describe('Error Handling', () => {
+  it('should validate required parameters', async () => {
+    await expect(
+      server.request({
+        method: 'tools/call',
+        params: {
+          name: 'send_email',
+          arguments: { subject: 'Test' } // Missing 'recipient'
+        }
+      })
+    ).rejects.toThrow('Missing required parameter: recipient');
+  });
+
+  it('should handle invalid email format', async () => {
+    const response = await server.request({
+      method: 'tools/call',
+      params: {
+        name: 'send_email',
+        arguments: {
+          recipient: 'invalid-email',
+          subject: 'Test',
+          body: 'Test'
+        }
+      }
+    });
+
+    expect(response.isError).toBe(true);
+    expect(response.content[0].text).toContain('Invalid email');
+  });
+
+  it('should handle external service timeouts', async () => {
+    // Mock slow external service
+    mockApi.setTimeout(10000);
+
+    await expect(
+      callExternalServiceTool({ url: 'https://slow.api/data' })
+    ).rejects.toThrow('timeout');
+  });
+});
+```
+
+## Snapshot Testing
+
+Use snapshots for complex outputs:
+
+```typescript
+import { describe, it, expect } from 'vitest';
+
+describe('Tool Output Snapshots', () => {
+  it('should match snapshot for user query', async () => {
+    const result = await queryUsersTool({ nameFilter: 'Alice' });
+
+    expect(result).toMatchInlineSnapshot(`
+      "Users:
+      - Alice (alice@example.com)
+      - Alice Smith (alice.smith@example.com)"
+    `);
+  });
+});
+```
+
+## Load Testing
+
+Test performance under load:
+
+```typescript
+import { describe, it, expect } from 'vitest';
+
+describe('Performance Tests', () => {
+  it('should handle concurrent requests', async () => {
+    const promises = Array.from({ length: 100 }, (_, i) =>
+      server.request({
+        method: 'tools/call',
+        params: {
+          name: 'calculate',
+          arguments: { operation: 'add', a: i, b: i }
+        }
+      })
+    );
+
+    const start = Date.now();
+    const results = await Promise.all(promises);
+    const duration = Date.now() - start;
+
+    expect(results).toHaveLength(100);
+    expect(duration).toBeLessThan(5000); // Should complete in < 5s
+  });
+
+  it('should not leak memory', async () => {
+    const initialMemory = process.memoryUsage().heapUsed;
+
+    // Make many requests
+    for (let i = 0; i < 1000; i++) {
+      await server.request({
+        method: 'tools/call',
+        params: {
+          name: 'calculate',
+          arguments: { operation: 'add', a: i, b: i }
+        }
+      });
+    }
+
+    // Force garbage collection (requires node --expose-gc)
+    if (global.gc) global.gc();
+
+    const finalMemory = process.memoryUsage().heapUsed;
+    const memoryGrowth = finalMemory - initialMemory;
+
+    // Memory shouldn't grow significantly
+    expect(memoryGrowth).toBeLessThan(10 * 1024 * 1024); // < 10MB
+  });
+});
+```
+
+## Continuous Integration
+
+Example GitHub Actions workflow:
+
+```yaml
+name: Test MCP Server
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run integration tests
+        run: npm run test:integration
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+```
+
+## Best Practices
+
+1. **Test at multiple levels**: Unit, integration, and E2E
+2. **Mock external services**: Don't depend on real APIs in tests
+3. **Test error paths**: Error handling is as important as happy paths
+4. **Use snapshots**: For complex, stable outputs
+5. **Measure coverage**: Aim for >80% coverage
+6. **Automate testing**: Run tests on every commit
+7. **Load test**: Ensure performance under realistic load
+
+Comprehensive testing builds confidence in your MCP server. In the next lesson, we'll explore deployment options.

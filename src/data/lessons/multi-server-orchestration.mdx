@@ -1,0 +1,381 @@
+---
+title: 'Multi-Server Orchestration'
+description: 'Coordinating multiple MCP servers for complex workflows'
+---
+
+# Multi-Server Orchestration
+
+Real-world AI applications often need capabilities from multiple MCP servers. In this lesson, we'll explore patterns for orchestrating multiple servers to work together.
+
+## Why Multiple Servers?
+
+**Separation of Concerns**: Different servers handle different domains
+- Database server: Data access
+- Email server: Communication
+- Analytics server: Data analysis
+
+**Team Ownership**: Different teams own different servers
+- Platform team: Infrastructure tools
+- Data team: Analytics tools
+- Security team: Compliance tools
+
+**Third-Party Integrations**: Combine internal and external servers
+- Internal: Your company's APIs
+- External: GitHub, Slack, Jira MCP servers
+
+## Client-Side Orchestration
+
+The simplest approach: the client (like Claude Desktop) connects to multiple servers.
+
+### Configuration
+
+```json
+{
+  "mcpServers": {
+    "database": {
+      "command": "database-mcp-server",
+      "args": ["--connection", "postgres://localhost/mydb"]
+    },
+    "email": {
+      "command": "email-mcp-server",
+      "args": ["--smtp-host", "smtp.example.com"]
+    },
+    "analytics": {
+      "command": "node",
+      "args": ["/path/to/analytics-server/dist/index.js"]
+    }
+  }
+}
+```
+
+The AI model sees all tools from all servers and chooses which to call.
+
+### Tool Naming Conventions
+
+Avoid name collisions with prefixes:
+
+```typescript
+// Database server
+{
+  name: "db_query_users",
+  name: "db_insert_record",
+}
+
+// Email server
+{
+  name: "email_send",
+  name: "email_get_inbox",
+}
+```
+
+Or use descriptive namespaces in tool names.
+
+## Server-Side Aggregation
+
+A coordinator server that connects to multiple backend servers:
+
+```typescript
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+
+class AggregatorServer {
+  private server: Server;
+  private clients: Map<string, Client> = new Map();
+
+  constructor() {
+    this.server = new Server(
+      { name: 'aggregator', version: '1.0.0' },
+      { capabilities: { tools: {} } }
+    );
+  }
+
+  async connectBackend(name: string, command: string, args: string[]) {
+    const client = new Client({ name: `aggregator-client-${name}`, version: '1.0.0' });
+
+    // Connect to backend server
+    const process = spawn(command, args);
+    await client.connect({
+      stdin: process.stdout,
+      stdout: process.stdin
+    });
+
+    this.clients.set(name, client);
+  }
+
+  async listAllTools() {
+    const allTools = [];
+
+    for (const [serverName, client] of this.clients) {
+      const response = await client.request({
+        method: 'tools/list'
+      });
+
+      // Prefix tools with server name
+      const prefixedTools = response.tools.map(tool => ({
+        ...tool,
+        name: `${serverName}_${tool.name}`
+      }));
+
+      allTools.push(...prefixedTools);
+    }
+
+    return allTools;
+  }
+
+  async callTool(toolName: string, args: any) {
+    // Extract server name from tool name prefix
+    const [serverName, ...rest] = toolName.split('_');
+    const actualToolName = rest.join('_');
+
+    const client = this.clients.get(serverName);
+    if (!client) {
+      throw new Error(`Unknown server: ${serverName}`);
+    }
+
+    return await client.request({
+      method: 'tools/call',
+      params: {
+        name: actualToolName,
+        arguments: args
+      }
+    });
+  }
+}
+```
+
+## Workflow Orchestration
+
+Coordinate multi-step workflows across servers:
+
+```typescript
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+
+  if (name === 'onboard_new_user') {
+    const { email, name, role } = args;
+
+    try {
+      // Step 1: Create user in database
+      const dbResponse = await dbClient.request({
+        method: 'tools/call',
+        params: {
+          name: 'create_user',
+          arguments: { email, name, role }
+        }
+      });
+
+      const userId = JSON.parse(dbResponse.content[0].text).userId;
+
+      // Step 2: Send welcome email
+      await emailClient.request({
+        method: 'tools/call',
+        params: {
+          name: 'send_email',
+          arguments: {
+            to: email,
+            subject: 'Welcome!',
+            body: `Hi ${name}, welcome to our platform!`
+          }
+        }
+      });
+
+      // Step 3: Track analytics event
+      await analyticsClient.request({
+        method: 'tools/call',
+        params: {
+          name: 'track_event',
+          arguments: {
+            event: 'user_created',
+            userId,
+            properties: { role }
+          }
+        }
+      });
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Successfully onboarded ${name} (${email}). User ID: ${userId}`
+        }]
+      };
+
+    } catch (error) {
+      // Handle partial failures
+      return {
+        content: [{
+          type: 'text',
+          text: `Onboarding failed: ${error.message}. Please retry or contact support.`
+        }],
+        isError: true
+      };
+    }
+  }
+});
+```
+
+## Parallel Execution
+
+Execute independent operations in parallel:
+
+```typescript
+async function enrichUserData(userId: string) {
+  // Fetch data from multiple servers in parallel
+  const [userProfile, activityLog, preferences] = await Promise.all([
+    dbClient.request({
+      method: 'tools/call',
+      params: { name: 'get_user_profile', arguments: { userId } }
+    }),
+
+    analyticsClient.request({
+      method: 'tools/call',
+      params: { name: 'get_user_activity', arguments: { userId } }
+    }),
+
+    preferencesClient.request({
+      method: 'tools/call',
+      params: { name: 'get_preferences', arguments: { userId } }
+    })
+  ]);
+
+  // Combine results
+  return {
+    profile: JSON.parse(userProfile.content[0].text),
+    activity: JSON.parse(activityLog.content[0].text),
+    preferences: JSON.parse(preferences.content[0].text)
+  };
+}
+```
+
+## Error Handling Across Servers
+
+Handle failures gracefully:
+
+```typescript
+async function callWithFallback(
+  primaryClient: Client,
+  fallbackClient: Client,
+  toolName: string,
+  args: any
+) {
+  try {
+    return await primaryClient.request({
+      method: 'tools/call',
+      params: { name: toolName, arguments: args }
+    });
+  } catch (error) {
+    console.warn('Primary server failed, trying fallback:', error);
+
+    try {
+      return await fallbackClient.request({
+        method: 'tools/call',
+        params: { name: toolName, arguments: args }
+      });
+    } catch (fallbackError) {
+      throw new Error(
+        `Both primary and fallback servers failed. Primary: ${error.message}, Fallback: ${fallbackError.message}`
+      );
+    }
+  }
+}
+```
+
+## Request Routing
+
+Route requests based on rules:
+
+```typescript
+class Router {
+  route(toolName: string): Client {
+    // Route based on tool name patterns
+    if (toolName.startsWith('db_')) {
+      return this.clients.get('database')!;
+    }
+
+    if (toolName.includes('email')) {
+      return this.clients.get('email')!;
+    }
+
+    // Route based on load balancing
+    const servers = Array.from(this.clients.values());
+    return servers[Math.floor(Math.random() * servers.length)];
+  }
+}
+```
+
+## Caching Across Servers
+
+Share cached data between servers:
+
+```typescript
+import { Redis } from 'ioredis';
+
+const cache = new Redis();
+
+async function callWithCache(
+  client: Client,
+  toolName: string,
+  args: any
+): Promise<any> {
+  const cacheKey = `${toolName}:${JSON.stringify(args)}`;
+
+  // Check cache
+  const cached = await cache.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  // Call tool
+  const result = await client.request({
+    method: 'tools/call',
+    params: { name: toolName, arguments: args }
+  });
+
+  // Cache result (5 minute TTL)
+  await cache.setex(cacheKey, 300, JSON.stringify(result));
+
+  return result;
+}
+```
+
+## Observability for Multi-Server Systems
+
+Track requests across servers:
+
+```typescript
+import { trace } from '@opentelemetry/api';
+
+const tracer = trace.getTracer('orchestrator');
+
+async function orchestrateWorkflow(workflowName: string) {
+  return await tracer.startActiveSpan(workflowName, async (span) => {
+    span.setAttribute('workflow', workflowName);
+
+    // Each backend call creates a child span
+    await tracer.startActiveSpan('db.create_user', async (dbSpan) => {
+      const result = await dbClient.request({ ... });
+      dbSpan.end();
+      return result;
+    });
+
+    await tracer.startActiveSpan('email.send', async (emailSpan) => {
+      const result = await emailClient.request({ ... });
+      emailSpan.end();
+      return result;
+    });
+
+    span.end();
+  });
+}
+```
+
+## Best Practices
+
+1. **Clear ownership**: Each server has a well-defined domain
+2. **Avoid tight coupling**: Servers shouldn't depend on each other's internals
+3. **Idempotent operations**: Design for retries and failures
+4. **Timeout handling**: Set timeouts for all cross-server calls
+5. **Circuit breakers**: Prevent cascading failures
+6. **Distributed tracing**: Track requests across servers
+7. **Versioning**: Manage API compatibility between servers
+
+Multi-server orchestration enables powerful, composable AI systems. In the next lesson, we'll explore building custom transports.

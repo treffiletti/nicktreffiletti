@@ -1,0 +1,189 @@
+---
+title: 'Tools, Resources, and Prompts'
+description: 'The three primitives of MCP servers'
+---
+
+# Tools, Resources, and Prompts
+
+Every MCP server exposes capabilities through three core primitives: tools, resources, and prompts. Understanding these primitives is fundamental to designing effective MCP servers.
+
+## Tools: AI-Callable Functions
+
+Tools are functions that the AI model can invoke to perform actions or retrieve dynamic information.
+
+### Characteristics
+
+- **Executable**: Tools perform operations when called
+- **Parameters**: Accept structured input defined by JSON Schema
+- **Results**: Return structured output to the AI
+- **Side effects**: May modify external state (databases, APIs, etc.)
+
+### Example Tool Definition
+
+```typescript
+{
+  name: "send_email",
+  description: "Send an email to a recipient",
+  inputSchema: {
+    type: "object",
+    properties: {
+      to: { type: "string", format: "email" },
+      subject: { type: "string" },
+      body: { type: "string" }
+    },
+    required: ["to", "subject", "body"]
+  }
+}
+```
+
+### When to Use Tools
+
+Tools are ideal for:
+- **Actions**: Sending emails, creating tickets, updating records
+- **Dynamic queries**: Searching databases, calling APIs
+- **Computations**: Calculations, data transformations
+- **Integrations**: Interacting with third-party services
+
+### Best Practices
+
+**Clear naming**: Tool names should be verbs that describe the action (e.g., `search_documents`, `create_invoice`)
+
+**Detailed descriptions**: Help the AI understand when and how to use the tool
+
+**Precise schemas**: Use JSON Schema to validate inputs and guide the AI on correct usage
+
+**Idempotency**: Where possible, make tools safe to retry
+
+## Resources: Static Data Access
+
+Resources provide access to data that the AI can read. Unlike tools, resources are identified by URIs and represent data rather than actions.
+
+### Characteristics
+
+- **Addressable**: Each resource has a unique URI
+- **Read-only**: Resources are fetched, not executed
+- **Templates**: Can have URI templates for dynamic resources
+- **MIME types**: Specify content type (text, JSON, image, etc.)
+
+### Example Resource
+
+```typescript
+{
+  uri: "file:///project/README.md",
+  name: "Project README",
+  description: "Main project documentation",
+  mimeType: "text/markdown"
+}
+```
+
+### Resource Templates
+
+Templates allow dynamic resource URIs:
+
+```typescript
+{
+  uriTemplate: "database://users/{user_id}",
+  name: "User Profile",
+  description: "Fetch user profile by ID"
+}
+```
+
+The AI can then request `database://users/12345` to fetch a specific user.
+
+### When to Use Resources
+
+Resources are ideal for:
+- **Files**: Configuration files, documentation, code
+- **Database records**: User profiles, product catalogs
+- **API responses**: Weather data, stock prices
+- **Documents**: Reports, articles, specifications
+
+### Tools vs. Resources
+
+**Use a tool** when:
+- The operation has side effects
+- The AI needs to pass parameters
+- You're performing an action (not just reading data)
+
+**Use a resource** when:
+- You're exposing read-only data
+- Content can be addressed by URI
+- The AI should browse or discover available data
+
+## Prompts: Reusable Templates
+
+Prompts are pre-written prompt templates that users can invoke, optionally with arguments.
+
+### Characteristics
+
+- **Templated**: Include variable placeholders
+- **Reusable**: Common workflows as packaged prompts
+- **Parameterized**: Accept arguments for customization
+- **Discoverable**: Listed by the server for client to present to users
+
+### Example Prompt
+
+```typescript
+{
+  name: "review_code",
+  description: "Generate a code review for a file",
+  arguments: [
+    {
+      name: "file_path",
+      description: "Path to the file to review",
+      required: true
+    },
+    {
+      name: "focus",
+      description: "Aspect to focus on (security, performance, style)",
+      required: false
+    }
+  ]
+}
+```
+
+When invoked with arguments, the server returns the filled template:
+
+```
+Please review the code in {file_path}, focusing on {focus}.
+Consider:
+- Code quality and maintainability
+- Potential bugs or edge cases
+- Best practices and idioms
+```
+
+### When to Use Prompts
+
+Prompts are ideal for:
+- **Workflows**: Common tasks users perform repeatedly
+- **Onboarding**: Help users discover server capabilities
+- **Consistency**: Ensure important instructions aren't forgotten
+- **Organization**: Package complex prompts with the relevant server
+
+### Example Use Cases
+
+**Development Server**: Prompts for code review, bug analysis, test generation
+
+**Documentation Server**: Prompts for summarizing docs, finding examples
+
+**Data Analysis Server**: Prompts for exploratory analysis, visualization suggestions
+
+## Combining Primitives
+
+Effective MCP servers often combine these primitives. For example, a GitHub server might provide:
+
+**Tools**:
+- `create_issue`: Create a new issue
+- `search_code`: Search code across repositories
+
+**Resources**:
+- `repo://owner/name/README.md`: Repository README
+- `issue://owner/name/123`: Specific issue content
+
+**Prompts**:
+- `review_pr`: Generate a pull request review
+- `analyze_issue`: Analyze an issue and suggest solutions
+
+By understanding these three primitives, you can design MCP servers that provide comprehensive, well-structured capabilities to AI models.
+
+In the next module, we'll dive into actually building MCP servers using the TypeScript and Python SDKs.

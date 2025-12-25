@@ -59,13 +59,7 @@ function MobileNavigation({
           <div className="mt-4">
             <div className="flex flex-col gap-y-2">
               {[
-                ["Course", "/"],
                 ["About", "/about"],
-                ["Projects", "/projects"],
-                ["Speaking", "/speaking"],
-                ["Services", "/services"],
-                ["Interviews", "/interviews"],
-                ["Resources", "/resources"],
                 ["Blog", "/blog"],
               ].map(([title, href]) => (
                 <CloseButton
@@ -108,6 +102,26 @@ function MobileNavigation({
               </div>
             </div>
             <div className="mt-6 flex flex-col gap-y-2">
+              <h3 className="px-4 py-1 text-sm/7 text-gray-500">Under Construction</h3>
+              {[
+                ["Course", "/"],
+                ["Projects", "/projects"],
+                ["Speaking", "/speaking"],
+                ["Services", "/services"],
+                ["Interviews", "/interviews"],
+                ["Resources", "/resources"],
+              ].map(([title, href], index) => (
+                <CloseButton
+                  as={Link}
+                  key={index}
+                  href={href}
+                  className="rounded-md px-4 py-1 text-sm/7 font-semibold text-gray-950 hover:bg-gray-950/5 dark:text-white dark:hover:bg-white/5"
+                >
+                  {title}
+                </CloseButton>
+              ))}
+            </div>
+            <div className="mt-6 flex flex-col gap-y-2">
               <h3 className="px-4 py-1 text-sm/7 text-gray-500">Account</h3>
               {[
                 ["Settings", "#"],
@@ -144,13 +158,7 @@ function SiteNavigation() {
         onClose={() => setMobileMenuOpen(false)}
       />
       <div className="flex items-center gap-x-6 text-sm/6 text-gray-950 max-lg:hidden dark:text-white">
-        <Link href="/">Course</Link>
         <Link href="/about">About</Link>
-        <Link href="/projects">Projects</Link>
-        <Link href="/speaking">Speaking</Link>
-        <Link href="/services">Services</Link>
-        <Link href="/interviews">Interviews</Link>
-        <Link href="/resources">Resources</Link>
         <Link href="/blog">Blog</Link>
         <div className="flex items-center gap-x-3 ml-2">
           <a
@@ -178,6 +186,20 @@ function SiteNavigation() {
             <TwitterIcon />
           </a>
         </div>
+        <Dropdown>
+          <DropdownButton className="inline-flex items-center gap-x-2 focus:not-data-focus:outline-none">
+            Under Construction
+            <ChevronDownIcon className="stroke-gray-950 dark:stroke-white" />
+          </DropdownButton>
+          <DropdownMenu anchor="bottom end">
+            <DropdownItem href="/">Course</DropdownItem>
+            <DropdownItem href="/projects">Projects</DropdownItem>
+            <DropdownItem href="/speaking">Speaking</DropdownItem>
+            <DropdownItem href="/services">Services</DropdownItem>
+            <DropdownItem href="/interviews">Interviews</DropdownItem>
+            <DropdownItem href="/resources">Resources</DropdownItem>
+          </DropdownMenu>
+        </Dropdown>
         <Dropdown>
           <DropdownButton className="inline-flex items-center gap-x-2 focus:not-data-focus:outline-none">
             Account

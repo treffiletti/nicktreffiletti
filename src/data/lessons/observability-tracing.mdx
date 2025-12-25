@@ -1,0 +1,415 @@
+---
+title: 'Observability and Tracing'
+description: 'Monitoring and debugging MCP servers in production'
+---
+
+# Observability and Tracing
+
+Understanding what's happening inside your MCP server is critical for debugging issues and optimizing performance. In this lesson, we'll explore logging, metrics, and distributed tracing.
+
+## Structured Logging
+
+Use structured logging to make logs machine-readable and searchable:
+
+```typescript
+import winston from 'winston';
+
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: true }),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      ),
+      stderrLevels: ['error', 'warn', 'info', 'debug']
+    }),
+    new winston.transports.File({ filename: 'mcp-server.log' })
+  ]
+});
+
+// Log tool calls
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const startTime = Date.now();
+  const { name, arguments: args } = request.params;
+
+  logger.info('Tool called', {
+    tool: name,
+    arguments: args,
+    requestId: request.id
+  });
+
+  try {
+    const result = await executeTooltype(name, args);
+
+    logger.info('Tool completed', {
+      tool: name,
+      requestId: request.id,
+      duration: Date.now() - startTime,
+      success: true
+    });
+
+    return result;
+  } catch (error) {
+    logger.error('Tool failed', {
+      tool: name,
+      requestId: request.id,
+      duration: Date.now() - startTime,
+      error: error.message,
+      stack: error.stack,
+      success: false
+    });
+
+    throw error;
+  }
+});
+```
+
+## Request Tracing
+
+Add request IDs to trace operations across logs:
+
+```typescript
+import { v4 as uuidv4 } from 'uuid';
+
+interface RequestContext {
+  requestId: string;
+  toolName: string;
+  startTime: number;
+}
+
+const requestContexts = new Map<string, RequestContext>();
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const requestId = uuidv4();
+  const { name, arguments: args } = request.params;
+
+  const context: RequestContext = {
+    requestId,
+    toolName: name,
+    startTime: Date.now()
+  };
+
+  requestContexts.set(requestId, context);
+
+  logger.info('Request started', {
+    requestId,
+    tool: name,
+    arguments: args
+  });
+
+  try {
+    const result = await executeToolWithContext(name, args, context);
+
+    logger.info('Request completed', {
+      requestId,
+      duration: Date.now() - context.startTime
+    });
+
+    return result;
+  } finally {
+    requestContexts.delete(requestId);
+  }
+});
+```
+
+## Metrics Collection
+
+Track key metrics for performance monitoring:
+
+```typescript
+interface Metrics {
+  toolCalls: Map<string, number>;
+  errors: Map<string, number>;
+  latencies: Map<string, number[]>;
+}
+
+const metrics: Metrics = {
+  toolCalls: new Map(),
+  errors: new Map(),
+  latencies: new Map()
+};
+
+function recordToolCall(toolName: string, duration: number, success: boolean) {
+  // Count calls
+  metrics.toolCalls.set(toolName, (metrics.toolCalls.get(toolName) || 0) + 1);
+
+  // Track errors
+  if (!success) {
+    metrics.errors.set(toolName, (metrics.errors.get(toolName) || 0) + 1);
+  }
+
+  // Record latency
+  const latencies = metrics.latencies.get(toolName) || [];
+  latencies.push(duration);
+  metrics.latencies.set(toolName, latencies);
+}
+
+// Expose metrics endpoint for monitoring
+function getMetrics() {
+  const summary: any = {};
+
+  for (const [tool, count] of metrics.toolCalls) {
+    const latencies = metrics.latencies.get(tool) || [];
+    const errors = metrics.errors.get(tool) || 0;
+
+    summary[tool] = {
+      calls: count,
+      errors,
+      errorRate: (errors / count) * 100,
+      avgLatency: latencies.reduce((a, b) => a + b, 0) / latencies.length,
+      p95Latency: calculatePercentile(latencies, 95),
+      p99Latency: calculatePercentile(latencies, 99)
+    };
+  }
+
+  return summary;
+}
+
+function calculatePercentile(values: number[], percentile: number): number {
+  const sorted = values.slice().sort((a, b) => a - b);
+  const index = Math.ceil((percentile / 100) * sorted.length) - 1;
+  return sorted[index];
+}
+```
+
+## Health Checks
+
+Implement health check endpoints:
+
+```typescript
+interface HealthCheck {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  checks: {
+    database?: { status: string; latency?: number };
+    externalAPI?: { status: string; latency?: number };
+    cache?: { status: string };
+  };
+  timestamp: string;
+}
+
+async function performHealthCheck(): Promise<HealthCheck> {
+  const checks: HealthCheck['checks'] = {};
+
+  // Check database
+  try {
+    const start = Date.now();
+    await database.ping();
+    checks.database = {
+      status: 'up',
+      latency: Date.now() - start
+    };
+  } catch (error) {
+    checks.database = { status: 'down' };
+  }
+
+  // Check external API
+  try {
+    const start = Date.now();
+    await fetch('https://api.example.com/health');
+    checks.externalAPI = {
+      status: 'up',
+      latency: Date.now() - start
+    };
+  } catch (error) {
+    checks.externalAPI = { status: 'down' };
+  }
+
+  // Determine overall status
+  const allUp = Object.values(checks).every(c => c.status === 'up');
+  const anyDown = Object.values(checks).some(c => c.status === 'down');
+
+  return {
+    status: allUp ? 'healthy' : anyDown ? 'unhealthy' : 'degraded',
+    checks,
+    timestamp: new Date().toISOString()
+  };
+}
+```
+
+## Distributed Tracing
+
+For complex systems, use distributed tracing with OpenTelemetry:
+
+```typescript
+import { trace, context, SpanStatusCode } from '@opentelemetry/api';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+
+// Setup OpenTelemetry
+const provider = new NodeTracerProvider();
+provider.register();
+
+const tracer = trace.getTracer('mcp-server');
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+
+  // Create span for this tool call
+  return await tracer.startActiveSpan(`tool.${name}`, async (span) => {
+    span.setAttribute('tool.name', name);
+    span.setAttribute('tool.arguments', JSON.stringify(args));
+
+    try {
+      const result = await executeToolWithTracing(name, args);
+
+      span.setStatus({ code: SpanStatusCode.OK });
+      return result;
+    } catch (error) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
+      });
+      span.recordException(error);
+      throw error;
+    } finally {
+      span.end();
+    }
+  });
+});
+
+async function executeToolWithTracing(name: string, args: any) {
+  // Nested spans for external calls
+  return await tracer.startActiveSpan('database.query', async (span) => {
+    span.setAttribute('db.statement', 'SELECT * FROM users WHERE id = ?');
+
+    const result = await database.query('SELECT * FROM users WHERE id = ?', [args.userId]);
+
+    span.end();
+    return result;
+  });
+}
+```
+
+## Performance Profiling
+
+Profile tool execution to identify bottlenecks:
+
+```typescript
+interface ProfileEntry {
+  name: string;
+  duration: number;
+  timestamp: number;
+  children: ProfileEntry[];
+}
+
+class Profiler {
+  private stack: ProfileEntry[] = [];
+  private root: ProfileEntry | null = null;
+
+  start(name: string) {
+    const entry: ProfileEntry = {
+      name,
+      duration: 0,
+      timestamp: Date.now(),
+      children: []
+    };
+
+    if (this.stack.length > 0) {
+      this.stack[this.stack.length - 1].children.push(entry);
+    } else {
+      this.root = entry;
+    }
+
+    this.stack.push(entry);
+  }
+
+  end() {
+    const entry = this.stack.pop();
+    if (entry) {
+      entry.duration = Date.now() - entry.timestamp;
+    }
+  }
+
+  getProfile(): ProfileEntry | null {
+    return this.root;
+  }
+}
+
+// Usage
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const profiler = new Profiler();
+  profiler.start(`tool.${request.params.name}`);
+
+  try {
+    const result = await executeToolWithProfiling(
+      request.params.name,
+      request.params.arguments,
+      profiler
+    );
+
+    return result;
+  } finally {
+    profiler.end();
+
+    const profile = profiler.getProfile();
+    logger.debug('Performance profile', { profile });
+  }
+});
+```
+
+## Alerting
+
+Set up alerts for critical conditions:
+
+```typescript
+interface AlertConfig {
+  errorRateThreshold: number; // percentage
+  latencyThreshold: number; // ms
+  checkInterval: number; // ms
+}
+
+const alertConfig: AlertConfig = {
+  errorRateThreshold: 5, // Alert if error rate > 5%
+  latencyThreshold: 1000, // Alert if p95 > 1000ms
+  checkInterval: 60000 // Check every minute
+};
+
+setInterval(() => {
+  const metrics = getMetrics();
+
+  for (const [tool, stats] of Object.entries(metrics)) {
+    // Check error rate
+    if (stats.errorRate > alertConfig.errorRateThreshold) {
+      sendAlert({
+        severity: 'warning',
+        message: `High error rate for tool ${tool}: ${stats.errorRate.toFixed(2)}%`,
+        tool,
+        errorRate: stats.errorRate
+      });
+    }
+
+    // Check latency
+    if (stats.p95Latency > alertConfig.latencyThreshold) {
+      sendAlert({
+        severity: 'warning',
+        message: `High latency for tool ${tool}: p95 ${stats.p95Latency}ms`,
+        tool,
+        latency: stats.p95Latency
+      });
+    }
+  }
+}, alertConfig.checkInterval);
+
+function sendAlert(alert: any) {
+  logger.warn('Alert triggered', alert);
+  // Send to alerting system (PagerDuty, Slack, etc.)
+}
+```
+
+## Best Practices
+
+1. **Log to stderr**: Keep stdout for MCP protocol messages
+2. **Use structured logging**: JSON format for machine parsing
+3. **Add context**: Request IDs, user IDs, tool names
+4. **Monitor continuously**: Track metrics in real-time
+5. **Set up alerts**: Proactive notification of issues
+6. **Profile regularly**: Identify performance bottlenecks
+7. **Health checks**: Enable external monitoring
+
+Observability transforms debugging from guesswork to science. In the next lesson, we'll explore testing strategies for MCP servers.

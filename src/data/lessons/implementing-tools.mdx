@@ -1,0 +1,347 @@
+---
+title: 'Implementing Tools Deep Dive'
+description: 'Creating powerful, well-designed MCP tools'
+---
+
+# Implementing Tools Deep Dive
+
+Tools are the primary way AI agents interact with external systems through MCP. Well-designed tools make the difference between an AI that can help and one that truly augments human capabilities. In this lesson, we'll explore best practices for implementing MCP tools.
+
+## Tool Design Principles
+
+### 1. Single Responsibility
+
+Each tool should do one thing well. Instead of a monolithic `manage_database` tool, create specific tools:
+
+- `query_database`: Execute SELECT queries
+- `insert_record`: Add new records
+- `update_record`: Modify existing records
+- `delete_record`: Remove records
+
+This gives the AI clearer mental models and makes each tool easier to test and maintain.
+
+### 2. Clear, Descriptive Names
+
+Tool names should be verb phrases that clearly indicate what the tool does:
+
+**Good**: `search_customer_records`, `send_notification_email`, `calculate_tax`
+
+**Bad**: `customer`, `email`, `tax`
+
+The AI uses tool names as semantic hints, so clarity matters.
+
+### 3. Comprehensive Descriptions
+
+Descriptions should explain:
+- What the tool does
+- When to use it
+- What it returns
+- Any side effects
+
+```typescript
+{
+  name: "send_email",
+  description: `Send an email to one or more recipients.
+
+  Use this when the user explicitly asks to send an email or when an action requires email notification.
+
+  Returns a confirmation message with the message ID.
+
+  Side effects: Sends actual email(s), which cannot be undone.`,
+  inputSchema: { ... }
+}
+```
+
+## Input Schema Design
+
+JSON Schema defines your tool's inputs. Use it effectively:
+
+### Required vs. Optional Parameters
+
+Only mark parameters as required if the tool cannot function without them:
+
+```typescript
+{
+  type: "object",
+  properties: {
+    recipient: {
+      type: "string",
+      description: "Email recipient",
+      format: "email"
+    },
+    subject: {
+      type: "string",
+      description: "Email subject line"
+    },
+    body: {
+      type: "string",
+      description: "Email body content"
+    },
+    cc: {
+      type: "array",
+      items: { type: "string", format: "email" },
+      description: "CC recipients (optional)"
+    }
+  },
+  required: ["recipient", "subject", "body"]
+}
+```
+
+### Enums for Constrained Values
+
+Use enums when there's a fixed set of valid values:
+
+```typescript
+{
+  priority: {
+    type: "string",
+    enum: ["low", "medium", "high", "urgent"],
+    description: "Task priority level",
+    default: "medium"
+  }
+}
+```
+
+This helps the AI choose valid values and enables client-side validation.
+
+### Provide Examples
+
+Where helpful, include examples in the description:
+
+```typescript
+{
+  date: {
+    type: "string",
+    description: "Date in ISO 8601 format (e.g., '2024-03-15' or '2024-03-15T14:30:00Z')"
+  }
+}
+```
+
+## Output Formatting
+
+Tool responses should be structured and informative:
+
+### Rich Text Content
+
+Use multiple content blocks for complex results:
+
+```typescript
+return {
+  content: [
+    {
+      type: "text",
+      text: "Query executed successfully",
+    },
+    {
+      type: "text",
+      text: JSON.stringify(results, null, 2),
+    },
+    {
+      type: "text",
+      text: `Retrieved ${results.length} records in ${executionTime}ms`,
+    },
+  ],
+};
+```
+
+### Error Messages
+
+Provide actionable error messages:
+
+```typescript
+// Bad
+throw new Error("Invalid input");
+
+// Good
+throw new Error(
+  "Invalid email format for 'recipient'. Expected format: user@domain.com. Received: " + recipient
+);
+```
+
+### Success Confirmations
+
+Always confirm what happened:
+
+```typescript
+// Bad
+return { content: [{ type: "text", text: "Done" }] };
+
+// Good
+return {
+  content: [
+    {
+      type: "text",
+      text: `Email sent successfully to ${recipient}. Message ID: ${messageId}`,
+    },
+  ],
+};
+```
+
+## Advanced Tool Patterns
+
+### Pagination
+
+For tools that return large datasets, implement pagination:
+
+```typescript
+{
+  name: "search_logs",
+  inputSchema: {
+    type: "object",
+    properties: {
+      query: { type: "string" },
+      page: { type: "integer", default: 1, minimum: 1 },
+      pageSize: { type: "integer", default: 50, minimum: 1, maximum: 100 }
+    },
+    required: ["query"]
+  }
+}
+```
+
+### Streaming/Progress Updates
+
+For long-running operations, consider how to communicate progress. While MCP doesn't have built-in streaming for tool results, you can:
+
+1. Return progress estimates in the response
+2. Use server notifications (if transport supports them)
+3. Implement a separate `check_status` tool for polling
+
+### Idempotency Tokens
+
+For tools that create or modify resources, support idempotency:
+
+```typescript
+{
+  name: "create_order",
+  inputSchema: {
+    type: "object",
+    properties: {
+      items: { type: "array", items: { type: "object" } },
+      idempotencyKey: {
+        type: "string",
+        description: "Unique key to prevent duplicate orders"
+      }
+    }
+  }
+}
+```
+
+## Testing Tools
+
+### Unit Testing
+
+Test tools independently from the MCP protocol:
+
+```typescript
+import { describe, it, expect } from 'vitest';
+
+describe('calculate tool', () => {
+  it('should add two numbers correctly', async () => {
+    const result = await handleCalculate({
+      operation: 'add',
+      a: 5,
+      b: 3
+    });
+
+    expect(result.content[0].text).toContain('8');
+  });
+
+  it('should handle division by zero', async () => {
+    await expect(
+      handleCalculate({ operation: 'divide', a: 5, b: 0 })
+    ).rejects.toThrow('Division by zero');
+  });
+});
+```
+
+### Integration Testing
+
+Test the full MCP request/response flow:
+
+```typescript
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+
+const client = new Client({ name: "test-client", version: "1.0.0" });
+// Connect to your server
+const result = await client.request({
+  method: "tools/call",
+  params: {
+    name: "calculate",
+    arguments: { operation: "add", a: 5, b: 3 }
+  }
+});
+
+expect(result.content[0].text).toContain('8');
+```
+
+## Performance Considerations
+
+### Caching
+
+Cache expensive operations when appropriate:
+
+```typescript
+const cache = new Map();
+
+async function queryDatabase(sql: string) {
+  const cacheKey = sql;
+
+  if (cache.has(cacheKey)) {
+    const cached = cache.get(cacheKey);
+    if (Date.now() - cached.timestamp < 60000) { // 1 minute TTL
+      return cached.data;
+    }
+  }
+
+  const data = await db.query(sql);
+  cache.set(cacheKey, { data, timestamp: Date.now() });
+  return data;
+}
+```
+
+### Timeouts
+
+Implement timeouts for external API calls:
+
+```typescript
+async function callExternalAPI(url: string) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    return await response.json();
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout after 5 seconds');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+```
+
+## Documentation
+
+Document your tools well:
+
+```typescript
+/**
+ * Searches the knowledge base for relevant documents
+ *
+ * @param query - Search query string
+ * @param limit - Maximum number of results (1-100)
+ * @returns Matching documents with relevance scores
+ *
+ * @example
+ * ```typescript
+ * search_knowledge_base({
+ *   query: "deployment strategies",
+ *   limit: 10
+ * })
+ * ```
+ */
+```
+
+Good tool design makes AI agents more capable and reliable. In the next lesson, we'll explore resource providers for exposing data to AI agents.

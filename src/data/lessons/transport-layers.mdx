@@ -1,0 +1,135 @@
+---
+title: 'Transport Layers: stdio, SSE, and HTTP'
+description: 'Understanding the different ways MCP servers communicate'
+---
+
+# Transport Layers
+
+MCP is transport-agnostic, meaning the protocol can run over different communication channels. Each transport has different characteristics and trade-offs. Understanding when to use each one is crucial for building effective MCP servers.
+
+## stdio (Standard Input/Output)
+
+The stdio transport runs MCP servers as local processes that communicate via standard input and output streams.
+
+### How It Works
+
+- Client spawns server as a child process
+- Communication happens through stdin/stdout
+- Each line contains one JSON-RPC message
+- Server logs and diagnostics go to stderr
+
+### When to Use stdio
+
+**Best for:**
+- **Local development tools**: Servers that interact with local file systems, databases, or development environments
+- **Desktop applications**: Like Claude Desktop, which primarily runs local servers
+- **Simple deployment**: No network configuration needed
+
+**Pros:**
+- Zero network overhead (IPC is fast)
+- No authentication complexity (process isolation provides security)
+- Easy to debug (can inspect stdin/stdout directly)
+- Works behind firewalls and offline
+
+**Cons:**
+- Limited to same machine
+- Process lifecycle tied to client
+- No connection sharing across multiple clients
+- Resource limits from running multiple server processes
+
+### Example Use Case
+
+A VS Code extension that provides MCP tools for code analysis runs via stdio. When VS Code starts, it spawns the MCP server process, and they communicate through streams until VS Code closes.
+
+## Server-Sent Events (SSE)
+
+SSE provides server-to-client streaming over HTTP. MCP uses SSE for the server-to-client direction and standard HTTP POST for client-to-server messages.
+
+### How It Works
+
+- Client connects to server's SSE endpoint
+- Server streams JSON-RPC messages as SSE events
+- Client sends requests via HTTP POST to a separate endpoint
+- Bidirectional communication over HTTP
+
+### When to Use SSE
+
+**Best for:**
+- **Remote servers**: When client and server are on different machines
+- **Long-lived connections**: Services that need to push updates to clients
+- **Web applications**: Browser-based MCP clients can use SSE natively
+- **Multi-client servers**: One server serving many clients
+
+**Pros:**
+- Works across networks
+- Firewall and proxy friendly (just HTTP)
+- Server can push notifications to client
+- Browser compatibility
+
+**Cons:**
+- Requires network infrastructure
+- Authentication and authorization needed
+- Higher latency than stdio
+- Connection management complexity
+
+### Example Use Case
+
+A cloud-based MCP server that provides access to company databases. Multiple employees can connect their Claude Desktop instances to this centralized server without running local database credentials.
+
+## HTTP
+
+Pure HTTP transport uses request-response patterns without persistent connections.
+
+### How It Works
+
+- Client sends HTTP POST request with JSON-RPC payload
+- Server processes request and returns HTTP response
+- No persistent connection between requests
+- Can be deployed as serverless functions
+
+### When to Use HTTP
+
+**Best for:**
+- **Serverless deployments**: AWS Lambda, Cloudflare Workers, etc.
+- **Stateless operations**: Tools that don't maintain session state
+- **High scalability**: Auto-scaling behind load balancers
+- **Simple integrations**: Standard HTTP makes it easy to test and debug
+
+**Pros:**
+- Serverless compatible (pay per use)
+- Standard HTTP tooling (curl, Postman, etc.)
+- Easy to scale horizontally
+- Stateless simplifies deployment
+
+**Cons:**
+- No server-to-client notifications
+- Connection overhead on each request
+- Not suitable for long-running operations
+- Cannot stream responses
+
+### Example Use Case
+
+An MCP server deployed on AWS Lambda that provides tools for querying company data warehouse. Each tool invocation is an independent HTTP request, and the serverless function scales automatically with demand.
+
+## Choosing the Right Transport
+
+**Use stdio when:**
+- Server and client are on the same machine
+- You need low latency and high throughput
+- Simplicity is important
+
+**Use SSE when:**
+- You need remote access
+- Server needs to push updates to clients
+- Multiple clients connect to one server
+- You want standard web technologies
+
+**Use HTTP when:**
+- You want serverless deployment
+- Operations are stateless
+- You need maximum scalability
+- Standard HTTP tooling is valuable
+
+Many production deployments use multiple transports. For example, Claude Desktop primarily uses stdio for local servers but can connect to remote servers via SSE.
+
+In the next lesson, we'll explore the three core primitives that MCP servers expose: tools, resources, and prompts.
