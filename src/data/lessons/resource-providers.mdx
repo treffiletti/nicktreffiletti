@@ -1,0 +1,324 @@
+---
+title: 'Building Resource Providers'
+description: 'Exposing data and content through MCP resources'
+---
+
+# Building Resource Providers
+
+Resources in MCP provide AI agents with read access to data through addressable URIs. Unlike tools, resources represent content rather than actions. In this lesson, we'll explore how to build effective resource providers.
+
+## Resource Basics
+
+A resource consists of:
+- **URI**: Unique identifier for the resource
+- **Name**: Human-readable name
+- **Description**: What the resource contains
+- **MIME Type**: Content type (text/plain, application/json, etc.)
+- **Content**: The actual data
+
+## Static Resources
+
+Static resources have fixed URIs and represent specific pieces of content:
+
+```typescript
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  return {
+    resources: [
+      {
+        uri: "config://app-settings",
+        name: "Application Settings",
+        description: "Current application configuration",
+        mimeType: "application/json",
+      },
+      {
+        uri: "docs://readme",
+        name: "Project README",
+        description: "Main project documentation",
+        mimeType: "text/markdown",
+      },
+    ],
+  };
+});
+
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const { uri } = request.params;
+
+  if (uri === "config://app-settings") {
+    const config = await loadConfig();
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: "application/json",
+          text: JSON.stringify(config, null, 2),
+        },
+      ],
+    };
+  }
+
+  if (uri === "docs://readme") {
+    const readme = await fs.readFile("README.md", "utf-8");
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: "text/markdown",
+          text: readme,
+        },
+      ],
+    };
+  }
+
+  throw new Error(`Resource not found: ${uri}`);
+});
+```
+
+## Resource Templates
+
+Templates allow dynamic resources with variable URIs:
+
+```typescript
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  return {
+    resources: [
+      {
+        uri: "file:///{path}",
+        name: "File Content",
+        description: "Read file content by path",
+        mimeType: "text/plain",
+      },
+    ],
+  };
+});
+
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const { uri } = request.params;
+
+  // Parse template URI
+  const fileMatch = uri.match(/^file:\/\/\/(.+)$/);
+
+  if (fileMatch) {
+    const filePath = fileMatch[1];
+
+    // Security: validate path is within allowed directory
+    const allowedDir = "/safe/directory";
+    const resolvedPath = path.resolve(allowedDir, filePath);
+
+    if (!resolvedPath.startsWith(allowedDir)) {
+      throw new Error("Access denied: path outside allowed directory");
+    }
+
+    const content = await fs.readFile(resolvedPath, "utf-8");
+
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: "text/plain",
+          text: content,
+        },
+      ],
+    };
+  }
+
+  throw new Error(`Resource not found: ${uri}`);
+});
+```
+
+## Resource Collections
+
+For large datasets, provide listing and pagination:
+
+```typescript
+// List all users (metadata only)
+{
+  uri: "users://",
+  name: "Users Directory",
+  description: "List all users",
+  mimeType: "application/json"
+}
+
+// Individual user resource
+{
+  uri: "users:///{user_id}",
+  name: "User Profile",
+  description: "User profile data",
+  mimeType: "application/json"
+}
+```
+
+Implementation:
+
+```typescript
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const { uri } = request.params;
+
+  // List all users
+  if (uri === "users://") {
+    const users = await db.query("SELECT id, name, email FROM users");
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: "application/json",
+          text: JSON.stringify({ users }, null, 2),
+        },
+      ],
+    };
+  }
+
+  // Get specific user
+  const userMatch = uri.match(/^users:\/\/\/(\d+)$/);
+  if (userMatch) {
+    const userId = parseInt(userMatch[1]);
+    const user = await db.query(
+      "SELECT * FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (!user) {
+      throw new Error(`User ${userId} not found`);
+    }
+
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: "application/json",
+          text: JSON.stringify(user, null, 2),
+        },
+      ],
+    };
+  }
+
+  throw new Error(`Unknown resource: ${uri}`);
+});
+```
+
+## Resource vs. Tool: Making the Right Choice
+
+### Use a Resource When:
+
+- **Read-only data**: The content doesn't change based on parameters beyond identification
+- **Browseable**: The AI might benefit from discovering related resources
+- **Cacheable**: The content can be cached for efficiency
+- **Addressable**: Each piece of content has a natural URI
+
+**Examples**: Configuration files, documentation, database records, log files
+
+### Use a Tool When:
+
+- **Actions required**: The operation has side effects or performs computation
+- **Complex parameters**: The operation requires multiple parameters or logic
+- **Dynamic results**: Results vary significantly based on inputs
+- **State changes**: The operation modifies data
+
+**Examples**: Searching, filtering, calculations, creating/updating records
+
+## Best Practices
+
+### URI Design
+
+Use consistent, hierarchical URI schemes:
+
+```
+file:///path/to/file
+database://table/record-id
+api://endpoint/resource
+```
+
+### MIME Types
+
+Always specify accurate MIME types:
+
+- `text/plain` - Plain text
+- `text/markdown` - Markdown
+- `application/json` - JSON data
+- `text/html` - HTML
+- `image/png` - Images (if supporting binary)
+
+### Security
+
+1. **Validate paths**: Prevent directory traversal attacks
+2. **Check permissions**: Ensure the requester should access the resource
+3. **Sanitize URIs**: Validate URI format before processing
+4. **Rate limiting**: Prevent abuse of resource endpoints
+
+### Caching
+
+Resources can often be cached aggressively:
+
+```typescript
+const resourceCache = new Map();
+
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const { uri } = request.params;
+
+  // Check cache
+  if (resourceCache.has(uri)) {
+    const cached = resourceCache.get(uri);
+    // Cache for 5 minutes
+    if (Date.now() - cached.timestamp < 300000) {
+      return cached.data;
+    }
+  }
+
+  // Fetch resource
+  const data = await fetchResource(uri);
+
+  // Cache result
+  resourceCache.set(uri, {
+    data,
+    timestamp: Date.now(),
+  });
+
+  return data;
+});
+```
+
+### Error Messages
+
+Provide helpful errors:
+
+```typescript
+if (!fileExists(path)) {
+  throw new Error(
+    `Resource not found: ${uri}. The file may have been moved or deleted.`
+  );
+}
+
+if (!hasPermission(path)) {
+  throw new Error(
+    `Access denied: ${uri}. You don't have permission to read this resource.`
+  );
+}
+```
+
+## Python Example
+
+Resource providers in Python follow similar patterns:
+
+```python
+@app.list_resources()
+async def list_resources() -> list[Resource]:
+    return [
+        Resource(
+            uri="config://settings",
+            name="Application Settings",
+            description="Current configuration",
+            mimeType="application/json",
+        ),
+    ]
+
+@app.read_resource()
+async def read_resource(uri: str) -> str:
+    if uri == "config://settings":
+        config = load_config()
+        return json.dumps(config, indent=2)
+
+    raise ValueError(f"Unknown resource: {uri}")
+```
+
+Resources provide a powerful way to expose data to AI agents. Combined with tools, they enable comprehensive AI integrations that are both browseable and actionable.
+
+In the next lesson, we'll explore security considerations for MCP servers.

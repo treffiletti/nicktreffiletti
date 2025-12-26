@@ -1,0 +1,382 @@
+---
+title: 'Error Handling and Retry Logic'
+description: 'Building resilient MCP servers that handle failures gracefully'
+---
+
+# Error Handling and Retry Logic
+
+Production MCP servers must handle errors gracefully. External APIs fail, databases timeout, and unexpected inputs arrive. In this lesson, we'll explore patterns for building resilient MCP servers.
+
+## Error Types
+
+### Validation Errors
+
+Errors caused by invalid input from the AI:
+
+```typescript
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+
+  if (name === "send_email") {
+    const { recipient, subject, body } = args;
+
+    // Validate email format
+    if (!isValidEmail(recipient)) {
+      return {
+        content: [{
+          type: "text",
+          text: `Error: Invalid email address '${recipient}'. Please provide a valid email.`
+        }],
+        isError: true
+      };
+    }
+
+    // Validate required fields
+    if (!subject || subject.trim().length === 0) {
+      return {
+        content: [{
+          type: "text",
+          text: "Error: Email subject cannot be empty."
+        }],
+        isError: true
+      };
+    }
+
+    // Process valid request
+    // ...
+  }
+});
+```
+
+### External Service Errors
+
+Errors from APIs, databases, or third-party services:
+
+```typescript
+async function callExternalAPI(url: string) {
+  try {
+    const response = await fetch(url, { timeout: 5000 });
+
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error(
+        "External API timeout. The service may be unavailable. Please try again later."
+      );
+    }
+
+    if (error.message.includes("ECONNREFUSED")) {
+      throw new Error(
+        "Could not connect to external service. Please check your network connection."
+      );
+    }
+
+    throw error;
+  }
+}
+```
+
+### Internal Errors
+
+Unexpected errors in your server logic:
+
+```typescript
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  try {
+    // Tool implementation
+    // ...
+  } catch (error) {
+    // Log internal errors for debugging
+    console.error("Internal server error:", error);
+
+    // Return user-friendly message
+    return {
+      content: [{
+        type: "text",
+        text: "An internal error occurred. Please try again or contact support if the problem persists."
+      }],
+      isError: true
+    };
+  }
+});
+```
+
+## Structured Error Responses
+
+Return errors in a consistent format:
+
+```typescript
+interface ErrorResponse {
+  content: Array<{
+    type: "text";
+    text: string;
+  }>;
+  isError: true;
+}
+
+function createErrorResponse(message: string, context?: any): ErrorResponse {
+  return {
+    content: [{
+      type: "text",
+      text: message
+    }],
+    isError: true
+  };
+}
+
+// Usage
+if (!user) {
+  return createErrorResponse(`User ${userId} not found`);
+}
+```
+
+## Retry Logic
+
+### Exponential Backoff
+
+For transient failures, implement retry with exponential backoff:
+
+```typescript
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+
+      // Don't retry validation errors
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      // Calculate delay: 1s, 2s, 4s
+      const delay = baseDelay * Math.pow(2, attempt);
+
+      console.error(
+        `Attempt ${attempt + 1} failed: ${error.message}. Retrying in ${delay}ms...`
+      );
+
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw new Error(`Failed after ${maxRetries} retries: ${lastError.message}`);
+}
+
+// Usage
+const result = await retryWithBackoff(
+  () => callExternalAPI("https://api.example.com/data")
+);
+```
+
+### Retry Hints
+
+Communicate retry guidance to clients:
+
+```typescript
+return {
+  content: [{
+    type: "text",
+    text: "Database connection timeout. This usually resolves quickly."
+  }],
+  isError: true,
+  _meta: {
+    retryable: true,
+    retryAfter: 5000 // Suggest retry after 5 seconds
+  }
+};
+```
+
+## Graceful Degradation
+
+When a dependency fails, provide partial functionality:
+
+```typescript
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+
+  if (name === "search_products") {
+    try {
+      // Try primary database
+      const results = await primaryDB.search(args.query);
+      return formatResults(results);
+    } catch (error) {
+      console.error("Primary database failed:", error);
+
+      try {
+        // Fall back to read replica
+        const results = await replicaDB.search(args.query);
+        return {
+          content: [{
+            type: "text",
+            text: formatResults(results) +
+              "\n\nNote: Results from backup database. Data may be slightly outdated."
+          }]
+        };
+      } catch (replicaError) {
+        // Fall back to cache
+        const cached = await cache.get(args.query);
+        if (cached) {
+          return {
+            content: [{
+              type: "text",
+              text: cached +
+                "\n\nNote: Showing cached results. Live search temporarily unavailable."
+            }]
+          };
+        }
+
+        // All fallbacks exhausted
+        throw new Error("Search service temporarily unavailable");
+      }
+    }
+  }
+});
+```
+
+## Circuit Breaker Pattern
+
+Prevent cascading failures by "opening" the circuit after repeated failures:
+
+```typescript
+class CircuitBreaker {
+  private failures = 0;
+  private lastFailureTime = 0;
+  private state: 'closed' | 'open' | 'half-open' = 'closed';
+
+  constructor(
+    private threshold: number = 5,
+    private timeout: number = 60000
+  ) {}
+
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === 'open') {
+      const now = Date.now();
+      if (now - this.lastFailureTime < this.timeout) {
+        throw new Error("Circuit breaker is open. Service temporarily disabled.");
+      }
+      this.state = 'half-open';
+    }
+
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  private onSuccess() {
+    this.failures = 0;
+    this.state = 'closed';
+  }
+
+  private onFailure() {
+    this.failures++;
+    this.lastFailureTime = Date.now();
+
+    if (this.failures >= this.threshold) {
+      this.state = 'open';
+      console.error(`Circuit breaker opened after ${this.failures} failures`);
+    }
+  }
+}
+
+// Usage
+const apiCircuitBreaker = new CircuitBreaker();
+
+const result = await apiCircuitBreaker.execute(() =>
+  callExternalAPI("https://api.example.com/data")
+);
+```
+
+## Input Sanitization
+
+Prevent errors from malformed input:
+
+```typescript
+function sanitizeInput(value: any, expectedType: string): any {
+  switch (expectedType) {
+    case 'string':
+      if (typeof value !== 'string') {
+        throw new ValidationError(`Expected string, got ${typeof value}`);
+      }
+      return value.trim();
+
+    case 'number':
+      const num = Number(value);
+      if (isNaN(num)) {
+        throw new ValidationError(`Expected number, got ${value}`);
+      }
+      return num;
+
+    case 'email':
+      const email = String(value).trim().toLowerCase();
+      if (!isValidEmail(email)) {
+        throw new ValidationError(`Invalid email: ${value}`);
+      }
+      return email;
+
+    default:
+      return value;
+  }
+}
+```
+
+## Logging Errors
+
+Log errors appropriately for debugging:
+
+```typescript
+import winston from 'winston';
+
+const logger = winston.createLogger({
+  level: 'error',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: 'error.log', level: 'error' })
+  ]
+});
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  try {
+    // Tool logic
+  } catch (error) {
+    logger.error('Tool execution failed', {
+      tool: request.params.name,
+      arguments: request.params.arguments,
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+
+    throw error;
+  }
+});
+```
+
+## Best Practices
+
+1. **Be specific**: Error messages should guide users toward resolution
+2. **Log extensively**: Capture context for debugging
+3. **Fail fast**: Validate inputs before expensive operations
+4. **Retry smartly**: Use exponential backoff with jitter
+5. **Communicate clearly**: Tell users what went wrong and what to do
+6. **Degrade gracefully**: Provide partial functionality when possible
+7. **Protect downstream**: Use circuit breakers to prevent cascades
+
+Production systems fail in unexpected ways. Robust error handling ensures your MCP server remains reliable even when dependencies don't.
+
+In the next lesson, we'll explore observability and tracing for production MCP servers.

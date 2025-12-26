@@ -46,228 +46,153 @@ export async function getLessonContent(slug: string) {
 
 const lessons = [
   {
-    id: "orientation",
-    title: "Orientation: Understanding Where You Are",
+    id: "mcp-fundamentals",
+    title: "MCP Fundamentals",
     description:
-      "You need to know where you're starting from, before you can pretend to decide where you're going.",
+      "Learn the core concepts of Model Context Protocol and how it enables AI agents to connect with tools and data.",
     lessons: [
       {
-        id: "landscape-of-choice",
-        title: "The Landscape of Choice",
+        id: "what-is-mcp",
+        title: "What is Model Context Protocol?",
         description:
-          "A practical map for navigating the illusion that you actually have any agency at all.",
-        video: {
-          duration: 876,
-          thumbnail:
-            "https://assets.tailwindcss.com/templates/compass/lesson-video-thumbnail-01.png",
-          url: "https://assets.tailwindcss.com/templates/compass/landscape-of-choice.mp4",
-        },
-      },
-      {
-        id: "paradox-of-agency",
-        title: "The Paradox of Agency",
-        description:
-          "Explore whether you're living your life or just reacting to everyone else's.",
+          "Understanding MCP and why it matters for AI development.",
         video: null,
       },
       {
-        id: "liberation-from-regret",
-        title: "Liberation from Regret",
+        id: "mcp-architecture",
+        title: "MCP Architecture Overview",
         description:
-          "If no alternative choice was ever possible, regret becomes logically unnecessary.",
-        video: {
-          duration: 947,
-          thumbnail:
-            "https://assets.tailwindcss.com/templates/compass/lesson-video-thumbnail-02.png",
-          url: "https://assets.tailwindcss.com/templates/compass/liberation-from-regret.mp4",
-        },
-      },
-      {
-        id: "recognizing-patterns",
-        title: "Recognizing Patterns",
-        description:
-          "Failures weren't freely chosen but were inevitable given your circumstances.",
+          "The components and communication patterns of MCP systems.",
         video: null,
       },
       {
-        id: "values-and-goals",
-        title: "Values and Goals",
+        id: "transport-layers",
+        title: "Transport Layers: stdio, SSE, and HTTP",
         description:
-          "Identify patterns in your interests and abilities that reveal your predetermined direction.",
-        video: {
-          duration: 1328,
-          thumbnail:
-            "https://assets.tailwindcss.com/templates/compass/lesson-video-thumbnail-04.png",
-          url: "https://assets.tailwindcss.com/templates/compass/values-and-goals.mp4",
-        },
-      },
-    ],
-  },
-  {
-    id: "direction",
-    title: "Direction: Choosing a Path",
-    description:
-      "Experience the sensation of choice without the burden of true responsibility.",
-    lessons: [
-      {
-        id: "mapping-causal-factors",
-        title: "Mapping the Causal Factors",
-        description:
-          "The causes acting on you can give you insight into where they might take you.",
-        video: {
-          duration: 892,
-          thumbnail:
-            "https://assets.tailwindcss.com/templates/compass/lesson-video-thumbnail-03.png",
-          url: "https://assets.tailwindcss.com/templates/compass/mapping-causal-factors.mp4",
-        },
-      },
-      {
-        id: "reframing-uncertainty",
-        title: "Reframing Uncertainty as Agency",
-        description:
-          "If you squint, not being able to predict the future looks sort of like free will.",
+          "Understanding the different ways MCP servers communicate.",
         video: null,
       },
       {
-        id: "decision-paralysis",
-        title: "Overcoming Decision Paralysis",
+        id: "tools-resources-prompts",
+        title: "Tools, Resources, and Prompts",
         description:
-          "You can't be paralysed by choices you don't actually have.",
-        video: null,
-      },
-      {
-        id: "path-of-least-resistance",
-        title: "Perceiving the Path of Least Resistance",
-        description:
-          "Recognizing which direction requires the least psychological struggle.",
-        video: {
-          duration: 1147,
-          thumbnail:
-            "https://assets.tailwindcss.com/templates/compass/lesson-video-thumbnail-01.png",
-          url: "https://assets.tailwindcss.com/templates/compass/path-of-least-resistance.mp4",
-        },
-      },
-      {
-        id: "surrendering-outcome",
-        title: "Surrendering to the Outcome",
-        description:
-          "Accepting that whatever path you choose has no bearing on where you'll go.",
-        video: {
-          duration: 1423,
-          thumbnail:
-            "https://assets.tailwindcss.com/templates/compass/lesson-video-thumbnail-05.png",
-          url: "https://assets.tailwindcss.com/templates/compass/surrendering-outcome.mp4",
-        },
-      },
-    ],
-  },
-  {
-    id: "navigation",
-    title: "Navigation: Steering Through the Inevitable",
-    description:
-      "Techniques for aligning with your inevitable trajectory while avoiding nihilism.",
-    lessons: [
-      {
-        id: "widening-field-of-view",
-        title: "Widening Your Field of View",
-        description:
-          "The universe can be cruel and it's important to see that coming.",
-        video: {
-          duration: 934,
-          thumbnail:
-            "https://assets.tailwindcss.com/templates/compass/lesson-video-thumbnail-02.png",
-          url: "https://assets.tailwindcss.com/templates/compass/widening-field-of-view.mp4",
-        },
-      },
-      {
-        id: "dealing-with-coincidence",
-        title: "Dealing with Coincidence",
-        description:
-          "If something does go the way you intended, realize that this was purely coincidental.",
-        video: null,
-      },
-      {
-        id: "forgiving-others",
-        title: "Forgiving Others",
-        description:
-          "When actions are beyond one's control, punishment is illogical.",
-        video: null,
-      },
-      {
-        id: "anxiety-messages",
-        title: "What Anxiety Is Trying to Tell You",
-        description:
-          "A lack of control can make you anxious, but realize this has no bearing on outcomes.",
-        video: null,
-      },
-      {
-        id: "maintaining-self",
-        title: "Maintaining a Sense of Self",
-        description:
-          "Who you think you are has been assigned to you by circumstance.",
+          "The three core primitives of MCP servers.",
         video: null,
       },
     ],
   },
   {
-    id: "destination",
-    title: "Destination: Arriving Where You Must",
+    id: "building-mcp-servers",
+    title: "Building MCP Servers",
     description:
-      "How to be content with the inconsequential destiny you've been given.",
+      "Hands-on tutorials for building production-ready MCP servers in TypeScript and Python.",
     lessons: [
       {
-        id: "reframing-achievement",
-        title: "Reframing Achievement and Failure",
+        id: "server-setup-typescript",
+        title: "Server Setup with TypeScript",
         description:
-          "Pride and regret are just psychological coping mechanisms.",
+          "Building your first MCP server with the TypeScript SDK.",
         video: null,
       },
       {
-        id: "surrendering-to-success",
-        title: "Surrendering to Success",
+        id: "server-setup-python",
+        title: "Server Setup with Python",
         description:
-          "Achievements reveal capabilities that were always present rather than self development.",
-        video: {
-          duration: 1247,
-          thumbnail:
-            "https://assets.tailwindcss.com/templates/compass/lesson-video-thumbnail-02.png",
-          url: "https://assets.tailwindcss.com/templates/compass/surrendering-to-success.mp4",
-        },
+          "Building MCP servers with the Python SDK.",
+        video: null,
       },
       {
-        id: "giving-credit",
-        title: "Giving Credit Where it's Due",
+        id: "implementing-tools",
+        title: "Implementing Tools Deep Dive",
         description:
-          "Recognize the broader system that produced your achievement.",
-        video: {
-          duration: 967,
-          thumbnail:
-            "https://assets.tailwindcss.com/templates/compass/lesson-video-thumbnail-04.png",
-          url: "https://assets.tailwindcss.com/templates/compass/giving-credit.mp4",
-        },
+          "Creating powerful, well-designed MCP tools.",
+        video: null,
       },
       {
-        id: "unburden-accountability",
-        title: "Unburden Yourself from Accountability",
+        id: "resource-providers",
+        title: "Building Resource Providers",
         description:
-          "When things haven't gone your way, it literally couldn't have been your fault.",
-        video: {
-          duration: 1123,
-          thumbnail:
-            "https://assets.tailwindcss.com/templates/compass/lesson-video-thumbnail-05.png",
-          url: "https://assets.tailwindcss.com/templates/compass/unburden-accountability.mp4",
-        },
+          "Exposing data and content through MCP resources.",
+        video: null,
       },
       {
-        id: "writing-autobiography",
-        title: "Exercise: Writing your autobiography",
-        description: "A way to come to grips with your inconsequence.",
-        video: {
-          duration: 1486,
-          thumbnail:
-            "https://assets.tailwindcss.com/templates/compass/lesson-video-thumbnail-01.png",
-          url: "https://assets.tailwindcss.com/templates/compass/writing-autobiography.mp4",
-        },
+        id: "security-basics",
+        title: "Security Considerations",
+        description:
+          "Securing your MCP servers and protecting sensitive operations.",
+        video: null,
+      },
+    ],
+  },
+  {
+    id: "production-patterns",
+    title: "Production Patterns",
+    description:
+      "Battle-tested patterns for building reliable, observable, and maintainable MCP servers.",
+    lessons: [
+      {
+        id: "error-handling",
+        title: "Error Handling and Retry Logic",
+        description:
+          "Building resilient MCP servers that handle failures gracefully.",
+        video: null,
+      },
+      {
+        id: "observability-tracing",
+        title: "Observability and Tracing",
+        description:
+          "Monitoring and debugging MCP servers in production.",
+        video: null,
+      },
+      {
+        id: "testing-strategies",
+        title: "Testing MCP Servers",
+        description:
+          "Unit testing, integration testing, and end-to-end testing strategies.",
+        video: null,
+      },
+      {
+        id: "deployment-options",
+        title: "Deployment Strategies",
+        description:
+          "Options for deploying MCP servers from local to cloud.",
+        video: null,
+      },
+    ],
+  },
+  {
+    id: "advanced-topics",
+    title: "Advanced Topics",
+    description:
+      "Advanced patterns for multi-server orchestration, custom transports, and enterprise integration.",
+    lessons: [
+      {
+        id: "multi-server-orchestration",
+        title: "Multi-Server Orchestration",
+        description:
+          "Coordinating multiple MCP servers for complex workflows.",
+        video: null,
+      },
+      {
+        id: "custom-transports",
+        title: "Building Custom Transports",
+        description:
+          "Extending MCP with custom transport implementations.",
+        video: null,
+      },
+      {
+        id: "enterprise-integration",
+        title: "Enterprise Integration Patterns",
+        description:
+          "Integrating MCP servers into enterprise environments.",
+        video: null,
+      },
+      {
+        id: "future-of-mcp",
+        title: "The Future of MCP",
+        description:
+          "Where MCP is headed and how to stay ahead.",
+        video: null,
       },
     ],
   },

@@ -1,0 +1,385 @@
+---
+title: 'Server Setup with Python'
+description: 'Building MCP servers with the Python SDK'
+---
+
+# Server Setup with Python
+
+Python is a popular choice for MCP servers due to its extensive ecosystem for data processing, APIs, and integrations. In this lesson, we'll build an MCP server using the Python SDK.
+
+## Prerequisites
+
+Before starting, ensure you have:
+- Python 3.10 or higher installed
+- pip package manager
+- Basic Python async/await knowledge
+- A code editor with Python support
+
+## Project Setup
+
+Create a new directory and virtual environment:
+
+```bash
+mkdir my-python-mcp-server
+cd my-python-mcp-server
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+Install the MCP SDK:
+
+```bash
+pip install mcp
+```
+
+Create a `requirements.txt`:
+
+```txt
+mcp>=0.1.0
+```
+
+## Building Your First Server
+
+Create `server.py` with a basic server structure:
+
+```python
+import asyncio
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+from mcp.types import (
+    Tool,
+    TextContent,
+    CallToolRequest,
+    ListToolsRequest,
+)
+
+# Create server instance
+app = Server("python-demo-server")
+
+@app.list_tools()
+async def list_tools() -> list[Tool]:
+    """List available tools."""
+    return [
+        Tool(
+            name="fetch_weather",
+            description="Get current weather for a city",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "city": {
+                        "type": "string",
+                        "description": "City name",
+                    },
+                    "units": {
+                        "type": "string",
+                        "enum": ["celsius", "fahrenheit"],
+                        "description": "Temperature units",
+                        "default": "celsius",
+                    },
+                },
+                "required": ["city"],
+            },
+        ),
+    ]
+
+@app.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+    """Handle tool calls."""
+    if name == "fetch_weather":
+        city = arguments["city"]
+        units = arguments.get("units", "celsius")
+
+        # In a real server, you'd call a weather API
+        # For demo purposes, we'll return mock data
+        temp = 22 if units == "celsius" else 72
+
+        return [
+            TextContent(
+                type="text",
+                text=f"Weather in {city}: {temp}°{units[0].upper()}, partly cloudy",
+            )
+        ]
+
+    raise ValueError(f"Unknown tool: {name}")
+
+async def main():
+    """Run the server using stdio transport."""
+    async with stdio_server() as (read_stream, write_stream):
+        await app.run(
+            read_stream,
+            write_stream,
+            app.create_initialization_options(),
+        )
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## Understanding the Code
+
+### Server Creation
+
+```python
+app = Server("python-demo-server")
+```
+
+We create a server instance with a name. The Python SDK uses decorators for clean, FastAPI-style code.
+
+### Decorator-Based Handlers
+
+```python
+@app.list_tools()
+async def list_tools() -> list[Tool]:
+    ...
+```
+
+The SDK provides decorators for registering handlers. This is more Pythonic than the TypeScript callback approach.
+
+### Async/Await
+
+MCP Python servers are built on asyncio, Python's native async framework. All handlers are async functions.
+
+### Tool Execution
+
+```python
+@app.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+    ...
+```
+
+The call_tool handler receives tool name and arguments, returning a list of content blocks.
+
+## Adding Database Integration
+
+Let's build a server that queries a SQLite database:
+
+```python
+import asyncio
+import sqlite3
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+from mcp.types import Tool, TextContent
+
+app = Server("database-server")
+
+# Initialize database
+def init_db():
+    conn = sqlite3.connect("demo.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL
+        )
+    """)
+    cursor.execute("INSERT OR IGNORE INTO users VALUES (1, 'Alice', 'alice@example.com')")
+    cursor.execute("INSERT OR IGNORE INTO users VALUES (2, 'Bob', 'bob@example.com')")
+    conn.commit()
+    conn.close()
+
+init_db()
+
+@app.list_tools()
+async def list_tools() -> list[Tool]:
+    return [
+        Tool(
+            name="query_users",
+            description="Query users from the database",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name_filter": {
+                        "type": "string",
+                        "description": "Filter users by name (partial match)",
+                    },
+                },
+            },
+        ),
+        Tool(
+            name="add_user",
+            description="Add a new user to the database",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "User's name"},
+                    "email": {"type": "string", "description": "User's email"},
+                },
+                "required": ["name", "email"],
+            },
+        ),
+    ]
+
+@app.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+    conn = sqlite3.connect("demo.db")
+    cursor = conn.cursor()
+
+    try:
+        if name == "query_users":
+            name_filter = arguments.get("name_filter", "")
+
+            if name_filter:
+                cursor.execute(
+                    "SELECT id, name, email FROM users WHERE name LIKE ?",
+                    (f"%{name_filter}%",)
+                )
+            else:
+                cursor.execute("SELECT id, name, email FROM users")
+
+            users = cursor.fetchall()
+
+            if not users:
+                result = "No users found"
+            else:
+                result = "Users:\n" + "\n".join(
+                    f"- {user[1]} ({user[2]})" for user in users
+                )
+
+            return [TextContent(type="text", text=result)]
+
+        if name == "add_user":
+            name = arguments["name"]
+            email = arguments["email"]
+
+            cursor.execute(
+                "INSERT INTO users (name, email) VALUES (?, ?)",
+                (name, email)
+            )
+            conn.commit()
+
+            return [
+                TextContent(
+                    type="text",
+                    text=f"Added user: {name} ({email})"
+                )
+            ]
+
+        raise ValueError(f"Unknown tool: {name}")
+
+    finally:
+        conn.close()
+
+async def main():
+    async with stdio_server() as (read_stream, write_stream):
+        await app.run(
+            read_stream,
+            write_stream,
+            app.create_initialization_options(),
+        )
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## Error Handling
+
+Handle errors gracefully with try/except:
+
+```python
+@app.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+    try:
+        # Tool logic here
+        ...
+    except ValueError as e:
+        return [
+            TextContent(
+                type="text",
+                text=f"Validation error: {str(e)}"
+            )
+        ]
+    except Exception as e:
+        return [
+            TextContent(
+                type="text",
+                text=f"Internal error: {str(e)}"
+            )
+        ]
+```
+
+## Working with External APIs
+
+Python's rich ecosystem makes API integration straightforward:
+
+```python
+import httpx
+from mcp.types import Tool, TextContent
+
+@app.list_tools()
+async def list_tools() -> list[Tool]:
+    return [
+        Tool(
+            name="fetch_github_user",
+            description="Fetch GitHub user information",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "username": {"type": "string", "description": "GitHub username"},
+                },
+                "required": ["username"],
+            },
+        ),
+    ]
+
+@app.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+    if name == "fetch_github_user":
+        username = arguments["username"]
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"https://api.github.com/users/{username}",
+                headers={"Accept": "application/vnd.github.v3+json"},
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        result = f"""
+GitHub User: {data['name']}
+Username: {data['login']}
+Bio: {data.get('bio', 'N/A')}
+Public Repos: {data['public_repos']}
+Followers: {data['followers']}
+"""
+
+        return [TextContent(type="text", text=result)]
+
+    raise ValueError(f"Unknown tool: {name}")
+```
+
+## Testing Your Server
+
+Run the server:
+
+```bash
+python server.py
+```
+
+The server waits for JSON-RPC input on stdin, just like the TypeScript version.
+
+## Best Practices
+
+1. **Use type hints**: Python 3.10+ type hints improve code clarity
+2. **Async all the way**: Use async/await for I/O operations
+3. **Resource cleanup**: Use context managers (`with`, `async with`) for resources
+4. **Validation**: Validate inputs before processing
+5. **Logging**: Use Python's logging module (output to stderr, not stdout)
+
+```python
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stderr  # Important: log to stderr, not stdout
+)
+
+logger = logging.getLogger(__name__)
+```
+
+## Next Steps
+
+You now have a working Python MCP server! The Python SDK's decorator-based approach makes it natural to build servers that integrate with Python's vast ecosystem of libraries.
+
+In the next lesson, we'll dive deeper into implementing sophisticated tools with complex input validation and rich output formatting.

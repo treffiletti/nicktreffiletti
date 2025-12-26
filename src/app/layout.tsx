@@ -16,6 +16,7 @@ import "./globals.css";
 import { SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/cn";
 import { Footer } from "@/components/footer";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const InterVariable = localFont({
   variable: "--font-inter",
@@ -88,6 +89,7 @@ export default function RootLayout({
     <html
       lang="en"
       dir="ltr"
+      suppressHydrationWarning
       className={cn(
         GeistMono.variable,
         GeistSans.variable,
@@ -97,12 +99,7 @@ export default function RootLayout({
       )}
     >
       <head>
-        <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
-        <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
-        <link rel="shortcut icon" href="/favicon/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-title" content="NickTreffiletti" />
-        <link rel="manifest" href="/favicon/site.webmanifest" />
         {process.env.NODE_ENV === "production" && (
           <script
             data-goatcounter="https://analytics.nicktreffiletti.com/count"
@@ -131,10 +128,12 @@ export default function RootLayout({
             }),
           }}
         />
-        <div className="isolate">
-          {children}
-          <Footer />
-        </div>
+        <ThemeProvider>
+          <div className="isolate">
+            {children}
+            <Footer />
+          </div>
+        </ThemeProvider>
         <Analytics />
         <SpeedInsights />
       </body>

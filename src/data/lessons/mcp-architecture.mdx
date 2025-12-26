@@ -1,0 +1,131 @@
+---
+title: 'MCP Architecture Overview'
+description: 'The components and communication patterns of MCP'
+---
+
+# MCP Architecture Overview
+
+Understanding the architecture of Model Context Protocol is essential for building robust MCP integrations. In this lesson, we'll explore the core components and how they communicate.
+
+## The Three Key Components
+
+### 1. MCP Hosts
+
+An MCP host is the application that runs the AI model and orchestrates the overall interaction. Examples include:
+
+- **Claude Desktop**: Anthropic's desktop app that supports MCP servers
+- **IDEs**: Development environments like VS Code with MCP extensions
+- **Custom AI Applications**: Your own applications built with MCP support
+
+The host is responsible for:
+- Managing connections to multiple MCP servers
+- Routing requests between the AI model and appropriate servers
+- Handling user permissions and security boundaries
+- Presenting server capabilities to the AI model
+
+### 2. MCP Clients
+
+A client is the component within a host that implements the MCP protocol to communicate with servers. The client:
+
+- Initiates connections to MCP servers
+- Sends requests (tool calls, resource fetches, prompt requests)
+- Receives and processes responses
+- Handles protocol-level concerns like JSON-RPC formatting
+
+In practice, the terms "host" and "client" are often used interchangeably, since most hosts include a client implementation.
+
+### 3. MCP Servers
+
+An MCP server exposes capabilities to clients through the standardized protocol. Servers can provide:
+
+- **Tools**: Functions the AI can call (e.g., "search_database", "send_email")
+- **Resources**: Data the AI can read (e.g., file contents, API responses)
+- **Prompts**: Reusable prompt templates with variable substitution
+
+Servers run independently from clients and can be:
+- **Local processes**: Running on the same machine via stdio
+- **Remote services**: Accessed over HTTP or Server-Sent Events (SSE)
+- **Containerized**: Deployed in Docker or Kubernetes environments
+
+## Communication Patterns
+
+MCP uses JSON-RPC 2.0 as its message format, which provides a simple request-response pattern with support for notifications.
+
+### Lifecycle Flow
+
+1. **Initialization**
+   - Client connects to server via chosen transport (stdio, SSE, HTTP)
+   - Handshake exchange includes protocol version and capabilities
+   - Server declares available tools, resources, and prompts
+
+2. **Operation**
+   - AI model requests a capability (e.g., calls a tool)
+   - Client sends JSON-RPC request to server
+   - Server executes the operation
+   - Server returns structured result to client
+   - Client provides result to AI model
+
+3. **Termination**
+   - Client sends shutdown notification
+   - Server cleans up resources
+   - Connection closes gracefully
+
+### Message Types
+
+**Requests**: Require a response from the server
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "search_database",
+    "arguments": { "query": "active users" }
+  }
+}
+```
+
+**Responses**: Server's reply to a request
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      { "type": "text", "text": "Found 1,247 active users" }
+    ]
+  }
+}
+```
+
+**Notifications**: One-way messages that don't expect a response
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "notifications/progress",
+  "params": { "progress": 75, "total": 100 }
+}
+```
+
+## Security Boundaries
+
+A critical aspect of MCP architecture is the clear security boundary between client and server:
+
+- **Servers cannot access client data** except through explicit requests
+- **Clients control which servers are trusted** and what permissions they have
+- **Servers must validate all inputs** from clients (which may include AI-generated data)
+- **Transport security** (TLS for remote servers) protects data in transit
+
+## Scalability Patterns
+
+MCP's architecture supports several scalability patterns:
+
+**Single Server**: One server, one client (simplest)
+
+**Multiple Servers**: Client connects to many servers, each providing different capabilities
+
+**Server Clusters**: Multiple instances of the same server behind a load balancer
+
+**Proxy/Gateway**: Intermediate component that aggregates multiple servers and presents them as one
+
+In the next lesson, we'll explore the different transport layers MCP supports and when to use each one.
