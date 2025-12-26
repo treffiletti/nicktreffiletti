@@ -41,7 +41,7 @@ Compare these approaches:
 ```
 
 **Tool-first (clear action):**
-```typescript
+```typescript filename="server.ts"
 // Agent knows exactly what this does
 {
   name: "update_user_role",
@@ -62,7 +62,7 @@ The tool communicates intent. The resource just exposes data.
 
 Start with tools. Add resources only when you need to expose structured data for context.
 
-```typescript
+```typescript filename="handlers/tools.ts"
 // Good: Clear, action-oriented tools
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
@@ -90,7 +90,7 @@ External dependencies fail. APIs timeout. Databases become unavailable. Your MCP
 
 Implement circuit breakers for all external calls:
 
-```typescript
+```typescript filename="lib/circuit-breaker.ts"
 class CircuitBreaker {
   private failures = 0;
   private lastFailTime = 0;

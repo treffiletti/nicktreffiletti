@@ -55,7 +55,17 @@ async function getHighlighter() {
   return highlighter;
 }
 
-async function CodeBlock({ code, lang }: { code: string; lang: string }) {
+async function CodeBlock({
+  code,
+  lang,
+  filename,
+  title,
+}: {
+  code: string;
+  lang: string;
+  filename?: string;
+  title?: string;
+}) {
   let out = (await getHighlighter()).codeToHtml(code, {
     lang,
     theme: theme.name,
@@ -75,7 +85,27 @@ async function CodeBlock({ code, lang }: { code: string; lang: string }) {
     ],
   });
 
-  return <div dangerouslySetInnerHTML={{ __html: out }} />;
+  const header = filename || title;
+
+  return (
+    <div className="not-prose group relative rounded-xl bg-gray-950 dark:bg-gray-950/50 dark:ring-1 dark:ring-white/10">
+      <div className="relative rounded-xl p-1">
+        {header && (
+          <div className="flex items-center justify-between border-b border-white/5 px-4 py-2">
+            <div className="flex items-center gap-2">
+              <div className="text-xs font-medium text-gray-400 dark:text-gray-500">
+                {header}
+              </div>
+            </div>
+          </div>
+        )}
+        <div
+          className="overflow-x-auto rounded-lg [&>pre]:my-0 [&>pre]:bg-transparent [&>pre]:p-4 [&>pre]:leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: out }}
+        />
+      </div>
+    </div>
+  );
 }
 
 const IMAGE_DIMENSION_REGEX = /^[^|]+\|\d+x\d+$/;
@@ -133,10 +163,23 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     async pre(props) {
       let child = React.Children.only(props.children);
       if (!child) return null;
-      let { children: code, className } = child.props;
+      let { children: code, className, meta } = child.props;
       let lang = className ? className.replace("language-", "") : "";
 
-      return <CodeBlock code={code} lang={lang} />;
+      // Parse meta string for filename and title
+      let filename: string | undefined;
+      let title: string | undefined;
+
+      if (meta) {
+        const filenameMatch = meta.match(/filename="([^"]+)"/);
+        const titleMatch = meta.match(/title="([^"]+)"/);
+        filename = filenameMatch?.[1];
+        title = titleMatch?.[1];
+      }
+
+      return (
+        <CodeBlock code={code} lang={lang} filename={filename} title={title} />
+      );
     },
     ...components,
   };
