@@ -15,7 +15,6 @@ import { usePathname } from "next/navigation";
 import type React from "react";
 import { createContext, useContext, useState } from "react";
 import { Navbar } from "./navbar";
-import Image from "next/image";
 
 export const SidebarContext = createContext<{
   isSidebarOpen: boolean;
@@ -171,15 +170,6 @@ export function SidebarLayoutContent({
   return (
     <>
       <Navbar>
-        <Link href="/" className="flex items-center gap-x-3 shrink-0">
-          <Image
-            src="/images/logo-v2-trans.jpg"
-            alt="Nick Treffiletti"
-            width={40}
-            height={40}
-            className="rounded-md"
-          />
-        </Link>
         <div className="flex min-w-0 shrink items-center gap-x-4">
           <IconButton
             onClick={() => setIsMobileDialogOpen(!isMobileDialogOpen)}
