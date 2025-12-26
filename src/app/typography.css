@@ -1,14 +1,19 @@
 .prose {
   color: var(--color-gray-700);
-  font-size: var(--text-sm);
-  line-height: --spacing(7);
+  font-size: var(--text-base);
+  line-height: 1.75;
 
   @variant dark {
     color: var(--color-gray-400);
   }
 
-  * + * {
-    margin-top: --spacing(6);
+  > * + * {
+    margin-top: --spacing(5);
+  }
+
+  p {
+    margin-top: --spacing(5);
+    margin-bottom: 0;
   }
 
   h1,
@@ -31,19 +36,21 @@
   }
 
   h2 {
-    font-size: var(--text-xl);
-    line-height: --spacing(7);
+    font-size: var(--text-2xl);
+    line-height: 1.4;
     letter-spacing: -0.025em;
-    font-weight: var(--font-weight-medium);
-    margin-top: --spacing(15);
+    font-weight: var(--font-weight-semibold);
+    margin-top: --spacing(12);
+    margin-bottom: --spacing(4);
   }
 
   h3 {
-    font-size: var(--text-lg);
-    line-height: --spacing(7);
+    font-size: var(--text-xl);
+    line-height: 1.5;
     letter-spacing: -0.025em;
-    font-weight: var(--font-weight-medium);
-    margin-top: --spacing(10);
+    font-weight: var(--font-weight-semibold);
+    margin-top: --spacing(8);
+    margin-bottom: --spacing(3);
   }
 
   a {
@@ -67,49 +74,75 @@
     }
   }
 
+  ol,
+  ul {
+    margin-top: --spacing(5);
+    margin-bottom: --spacing(5);
+  }
+
   ol {
     list-style-type: decimal;
-    margin-left: --spacing(6);
+    padding-left: --spacing(6);
 
     li {
-      padding-left: --spacing(2.5);
+      padding-left: --spacing(2);
+      margin-top: --spacing(2);
 
       &::marker {
         color: var(--color-gray-700);
+        font-weight: var(--font-weight-medium);
 
         @variant dark {
           color: var(--color-gray-400);
         }
       }
     }
+
+    li:first-child {
+      margin-top: 0;
+    }
   }
 
   ul {
     list-style-type: disc;
-    margin-left: --spacing(6);
+    padding-left: --spacing(6);
 
     li {
-      padding-left: --spacing(2.5);
+      padding-left: --spacing(2);
+      margin-top: --spacing(2);
 
       &::marker {
-        color: var(--color-gray-300);
+        color: var(--color-gray-400);
 
         @variant dark {
-          color: var(--color-gray-700);
+          color: var(--color-gray-600);
         }
       }
     }
+
+    li:first-child {
+      margin-top: 0;
+    }
+  }
+
+  /* Nested lists */
+  li > ul,
+  li > ol {
+    margin-top: --spacing(3);
+    margin-bottom: --spacing(2);
   }
 
   pre {
     border-radius: var(--radius-lg);
-    padding: --spacing(3) --spacing(4);
+    padding: --spacing(4);
     overflow-x: auto;
+    margin-top: --spacing(6);
+    margin-bottom: --spacing(6);
 
     > code {
       display: block;
       font-size: var(--text-sm);
-      line-height: --spacing(5);
+      line-height: 1.7;
       color: var(--color-white);
     }
 
@@ -137,18 +170,88 @@
   }
 
   code:where(:not(pre > code)) {
-    font-size: var(--text-sm);
-    line-height: var(--text-sm--line-height);
+    font-size: 0.9em;
     font-weight: var(--font-weight-medium);
     color: var(--color-gray-950);
+    background-color: --alpha(var(--color-gray-950) / 5%);
+    padding: 0.125rem 0.375rem;
+    border-radius: var(--radius);
 
     @variant dark {
       color: var(--color-white);
+      background-color: --alpha(var(--color-white) / 10%);
     }
 
     &::before,
     &::after {
       content: "`";
+    }
+  }
+
+  /* Blockquotes */
+  blockquote {
+    font-style: italic;
+    border-left: 3px solid var(--color-gray-300);
+    padding-left: --spacing(4);
+    margin-top: --spacing(6);
+    margin-bottom: --spacing(6);
+    color: var(--color-gray-600);
+
+    @variant dark {
+      border-left-color: var(--color-gray-700);
+      color: var(--color-gray-500);
+    }
+
+    p {
+      margin-top: 0;
+    }
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    margin-top: --spacing(6);
+    margin-bottom: --spacing(6);
+    font-size: var(--text-sm);
+  }
+
+  thead {
+    border-bottom: 1px solid var(--color-gray-300);
+
+    @variant dark {
+      border-bottom-color: var(--color-gray-700);
+    }
+  }
+
+  th {
+    padding: --spacing(2) --spacing(3);
+    text-align: left;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-950);
+
+    @variant dark {
+      color: var(--color-white);
+    }
+  }
+
+  td {
+    padding: --spacing(2) --spacing(3);
+    border-bottom: 1px solid var(--color-gray-200);
+
+    @variant dark {
+      border-bottom-color: var(--color-gray-800);
+    }
+  }
+
+  /* Horizontal rule */
+  hr {
+    border: none;
+    border-top: 1px solid var(--color-gray-200);
+    margin-top: --spacing(8);
+    margin-bottom: --spacing(8);
+
+    @variant dark {
+      border-top-color: var(--color-gray-800);
     }
   }
 }
