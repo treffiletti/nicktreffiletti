@@ -16,6 +16,7 @@ import "./globals.css";
 import { SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/cn";
 import { Footer } from "@/components/footer";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const InterVariable = localFont({
   variable: "--font-inter",
@@ -126,10 +127,12 @@ export default function RootLayout({
             }),
           }}
         />
-        <div className="isolate">
-          {children}
-          <Footer />
-        </div>
+        <ThemeProvider>
+          <div className="isolate">
+            {children}
+            <Footer />
+          </div>
+        </ThemeProvider>
         <Analytics />
         <SpeedInsights />
       </body>

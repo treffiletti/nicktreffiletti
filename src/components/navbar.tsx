@@ -7,6 +7,7 @@ import {
   DropdownMenu,
 } from "@/components/dropdown";
 import { IconButton } from "@/components/icon-button";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { ChevronDownIcon } from "@/icons/chevron-down-icon";
 import { CloseIcon } from "@/icons/close-icon";
 import { MenuIcon } from "@/icons/menu-icon";
@@ -57,6 +58,10 @@ function MobileNavigation({
             </CloseButton>
           </div>
           <div className="mt-4">
+            <div className="flex items-center justify-between px-4 py-1 mb-2">
+              <h3 className="text-sm/7 text-gray-500">Theme</h3>
+              <ThemeSwitcher />
+            </div>
             <div className="flex flex-col gap-y-2">
               {[
                 ["Course", "/"],
@@ -162,6 +167,7 @@ function SiteNavigation() {
         <Link href="/about">About</Link>
         <Link href="/blog">Blog</Link>
         <div className="flex items-center gap-x-3 ml-2">
+          <ThemeSwitcher />
           <a
             href="https://github.com/treffiletti"
             target="_blank"
