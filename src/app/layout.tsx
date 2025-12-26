@@ -89,6 +89,7 @@ export default function RootLayout({
     <html
       lang="en"
       dir="ltr"
+      suppressHydrationWarning
       className={cn(
         GeistMono.variable,
         GeistSans.variable,
