@@ -35,7 +35,20 @@ let highlighter: Highlighter | null = null;
 async function getHighlighter() {
   if (!highlighter) {
     highlighter = await createHighlighter({
-      langs: ["javascript", "css", "html", "typescript"],
+      langs: [
+        "javascript",
+        "typescript",
+        "jsx",
+        "tsx",
+        "json",
+        "css",
+        "html",
+        "bash",
+        "shell",
+        "python",
+        "yaml",
+        "markdown",
+      ],
       themes: [theme],
     });
   }
