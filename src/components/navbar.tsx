@@ -25,6 +25,24 @@ import Link from "next/link";
 import type React from "react";
 import { useState } from "react";
 
+const primaryNav = [
+  ["Course", "/"],
+  ["Blog", "/blog"],
+  ["About", "/about"],
+] as const;
+
+const secondaryNav = [
+  ["Services", "/services"],
+  ["Projects", "/projects"],
+  ["Speaking", "/speaking"],
+] as const;
+
+const socialLinks = [
+  { label: "GitHub", href: "https://github.com/treffiletti", Icon: GitHubIcon },
+  { label: "LinkedIn", href: "https://linkedin.com/in/nicktreffiletti", Icon: LinkedInIcon },
+  { label: "X (Twitter)", href: "https://x.com/iamnewyorknick", Icon: TwitterIcon },
+] as const;
+
 export function Navbar({ children, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -63,11 +81,7 @@ function MobileNavigation({
               <ThemeSwitcher />
             </div>
             <div className="flex flex-col gap-y-2">
-              {[
-                ["Course", "/"],
-                ["About", "/about"],
-                ["Blog", "/blog"],
-              ].map(([title, href]) => (
+              {primaryNav.map(([title, href]) => (
                 <CloseButton
                   as={Link}
                   key={href}
@@ -79,69 +93,34 @@ function MobileNavigation({
               ))}
             </div>
             <div className="mt-6 flex flex-col gap-y-2">
+              <h3 className="px-4 py-1 text-sm/7 text-gray-500">More</h3>
+              {secondaryNav.map(([title, href]) => (
+                <CloseButton
+                  as={Link}
+                  key={href}
+                  href={href}
+                  className="rounded-md px-4 py-1 text-sm/7 font-semibold text-gray-950 hover:bg-gray-950/5 dark:text-white dark:hover:bg-white/5"
+                >
+                  {title}
+                </CloseButton>
+              ))}
+            </div>
+            <div className="mt-6 flex flex-col gap-y-2">
               <h3 className="px-4 py-1 text-sm/7 text-gray-500">Connect</h3>
               <div className="flex items-center gap-x-4 px-4 py-2">
-                <a
-                  href="https://github.com/treffiletti"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400"
-                >
-                  <GitHubIcon />
-                </a>
-                <a
-                  href="https://linkedin.com/in/nicktreffiletti"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400"
-                >
-                  <LinkedInIcon />
-                </a>
-                <a
-                  href="https://x.com/iamnewyorknick"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400"
-                >
-                  <TwitterIcon />
-                </a>
+                {socialLinks.map(({ label, href, Icon }) => (
+                  <a
+                    key={href}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400"
+                  >
+                    <Icon />
+                  </a>
+                ))}
               </div>
-            </div>
-            <div className="mt-6 flex flex-col gap-y-2">
-              <h3 className="px-4 py-1 text-sm/7 text-gray-500">Under Construction</h3>
-              {[
-                ["Projects", "/projects"],
-                ["Speaking", "/speaking"],
-                ["Services", "/services"],
-                ["Interviews", "/interviews"],
-                ["Resources", "/resources"],
-              ].map(([title, href], index) => (
-                <CloseButton
-                  as={Link}
-                  key={index}
-                  href={href}
-                  className="rounded-md px-4 py-1 text-sm/7 font-semibold text-gray-950 hover:bg-gray-950/5 dark:text-white dark:hover:bg-white/5"
-                >
-                  {title}
-                </CloseButton>
-              ))}
-            </div>
-            <div className="mt-6 flex flex-col gap-y-2">
-              <h3 className="px-4 py-1 text-sm/7 text-gray-500">Account</h3>
-              {[
-                ["Settings", "#"],
-                ["Support", "#"],
-                ["Sign out", "/login"],
-              ].map(([title, href], index) => (
-                <CloseButton
-                  as={Link}
-                  key={index}
-                  href={href}
-                  className="rounded-md px-4 py-1 text-sm/7 font-semibold text-gray-950 hover:bg-gray-950/5 dark:text-white dark:hover:bg-white/5"
-                >
-                  {title}
-                </CloseButton>
-              ))}
             </div>
           </div>
         </DialogPanel>
@@ -151,7 +130,7 @@ function MobileNavigation({
 }
 
 function SiteNavigation() {
-  let [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <nav className="flex items-center">
@@ -163,58 +142,37 @@ function SiteNavigation() {
         onClose={() => setMobileMenuOpen(false)}
       />
       <div className="flex items-center gap-x-6 text-sm/6 text-gray-950 max-lg:hidden dark:text-white">
-        <Link href="/">Course</Link>
-        <Link href="/about">About</Link>
-        <Link href="/blog">Blog</Link>
+        {primaryNav.map(([title, href]) => (
+          <Link key={href} href={href}>
+            {title}
+          </Link>
+        ))}
         <div className="flex items-center gap-x-3 ml-2">
           <ThemeSwitcher />
-          <a
-            href="https://github.com/treffiletti"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400 transition-colors"
-          >
-            <GitHubIcon />
-          </a>
-          <a
-            href="https://linkedin.com/in/nicktreffiletti"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400 transition-colors"
-          >
-            <LinkedInIcon />
-          </a>
-          <a
-            href="https://x.com/iamnewyorknick"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400 transition-colors"
-          >
-            <TwitterIcon />
-          </a>
+          {socialLinks.map(({ label, href, Icon }) => (
+            <a
+              key={href}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={label}
+              className="text-gray-950 hover:text-gray-600 dark:text-white dark:hover:text-gray-400 transition-colors"
+            >
+              <Icon />
+            </a>
+          ))}
         </div>
         <Dropdown>
           <DropdownButton className="inline-flex items-center gap-x-2 focus:not-data-focus:outline-none">
-            Under Construction
+            More
             <ChevronDownIcon className="stroke-gray-950 dark:stroke-white" />
           </DropdownButton>
           <DropdownMenu anchor="bottom end">
-            <DropdownItem href="/projects">Projects</DropdownItem>
-            <DropdownItem href="/speaking">Speaking</DropdownItem>
-            <DropdownItem href="/services">Services</DropdownItem>
-            <DropdownItem href="/interviews">Interviews</DropdownItem>
-            <DropdownItem href="/resources">Resources</DropdownItem>
-          </DropdownMenu>
-        </Dropdown>
-        <Dropdown>
-          <DropdownButton className="inline-flex items-center gap-x-2 focus:not-data-focus:outline-none">
-            Account
-            <ChevronDownIcon className="stroke-gray-950 dark:stroke-white" />
-          </DropdownButton>
-          <DropdownMenu anchor="bottom end">
-            <DropdownItem href="#">Settings</DropdownItem>
-            <DropdownItem href="#">Support</DropdownItem>
-            <DropdownItem href="/login">Sign out</DropdownItem>
+            {secondaryNav.map(([title, href]) => (
+              <DropdownItem key={href} href={href}>
+                {title}
+              </DropdownItem>
+            ))}
           </DropdownMenu>
         </Dropdown>
       </div>

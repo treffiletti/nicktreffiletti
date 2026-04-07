@@ -121,22 +121,6 @@ export function Footer() {
                       Services
                     </Link>
                   </li>
-                  <li>
-                    <Link
-                      href="/interviews"
-                      className="text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-                    >
-                      Interviews
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/resources"
-                      className="text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-                    >
-                      Resources
-                    </Link>
-                  </li>
                 </ul>
               </div>
             </div>
