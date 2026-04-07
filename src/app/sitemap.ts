@@ -13,7 +13,7 @@ export default async function sitemap() {
     priority: 0.7,
   }))
 
-  // Main pages with priorities
+  // Main pages with priorities (only public routes)
   const routes = [
     { route: '', priority: 1.0 },           // Homepage
     { route: '/about', priority: 0.9 },     // About page
@@ -21,8 +21,6 @@ export default async function sitemap() {
     { route: '/projects', priority: 0.8 },  // Projects
     { route: '/speaking', priority: 0.7 },  // Speaking
     { route: '/services', priority: 0.8 },  // Services
-    { route: '/interviews', priority: 0.6 },
-    { route: '/resources', priority: 0.6 },
   ].map(({ route, priority }) => ({
     url: `${baseUrl}${route}`,
     lastModified: currentDate,
