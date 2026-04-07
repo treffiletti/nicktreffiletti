@@ -56,28 +56,44 @@ const lessons = [
         title: "What is Model Context Protocol?",
         description:
           "Understanding MCP and why it matters for AI development.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 420,
+          url: '',
+        },
       },
       {
         id: "mcp-architecture",
         title: "MCP Architecture Overview",
         description:
           "The components and communication patterns of MCP systems.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 540,
+          url: '',
+        },
       },
       {
         id: "transport-layers",
         title: "Transport Layers: stdio, SSE, and HTTP",
         description:
           "Understanding the different ways MCP servers communicate.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 600,
+          url: '',
+        },
       },
       {
         id: "tools-resources-prompts",
         title: "Tools, Resources, and Prompts",
         description:
           "The three core primitives of MCP servers.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 660,
+          url: '',
+        },
       },
     ],
   },
@@ -92,35 +108,55 @@ const lessons = [
         title: "Server Setup with TypeScript",
         description:
           "Building your first MCP server with the TypeScript SDK.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 720,
+          url: '',
+        },
       },
       {
         id: "server-setup-python",
         title: "Server Setup with Python",
         description:
           "Building MCP servers with the Python SDK.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 660,
+          url: '',
+        },
       },
       {
         id: "implementing-tools",
         title: "Implementing Tools Deep Dive",
         description:
           "Creating powerful, well-designed MCP tools.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 840,
+          url: '',
+        },
       },
       {
         id: "resource-providers",
         title: "Building Resource Providers",
         description:
           "Exposing data and content through MCP resources.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 660,
+          url: '',
+        },
       },
       {
         id: "security-basics",
         title: "Security Considerations",
         description:
           "Securing your MCP servers and protecting sensitive operations.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 600,
+          url: '',
+        },
       },
     ],
   },
@@ -135,28 +171,44 @@ const lessons = [
         title: "Error Handling and Retry Logic",
         description:
           "Building resilient MCP servers that handle failures gracefully.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 720,
+          url: '',
+        },
       },
       {
         id: "observability-tracing",
         title: "Observability and Tracing",
         description:
           "Monitoring and debugging MCP servers in production.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 660,
+          url: '',
+        },
       },
       {
         id: "testing-strategies",
         title: "Testing MCP Servers",
         description:
           "Unit testing, integration testing, and end-to-end testing strategies.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 780,
+          url: '',
+        },
       },
       {
         id: "deployment-options",
         title: "Deployment Strategies",
         description:
           "Options for deploying MCP servers from local to cloud.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 660,
+          url: '',
+        },
       },
     ],
   },
@@ -171,28 +223,44 @@ const lessons = [
         title: "Multi-Server Orchestration",
         description:
           "Coordinating multiple MCP servers for complex workflows.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 840,
+          url: '',
+        },
       },
       {
         id: "custom-transports",
         title: "Building Custom Transports",
         description:
           "Extending MCP with custom transport implementations.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 720,
+          url: '',
+        },
       },
       {
         id: "enterprise-integration",
         title: "Enterprise Integration Patterns",
         description:
           "Integrating MCP servers into enterprise environments.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 900,
+          url: '',
+        },
       },
       {
         id: "future-of-mcp",
         title: "The Future of MCP",
         description:
           "Where MCP is headed and how to stay ahead.",
-        video: null,
+        video: {
+          thumbnail: '',
+          duration: 480,
+          url: '',
+        },
       },
     ],
   },
