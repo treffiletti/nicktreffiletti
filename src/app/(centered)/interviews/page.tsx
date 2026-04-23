@@ -32,7 +32,10 @@ export default function InterviewsPage() {
       </p>
       <div className="mt-16 pb-32">
         <p className="text-sm/7 text-gray-500 dark:text-gray-400">
-          Real interviews in progress — coming soon.
+          Conversations with engineers building production MCP integrations, API governance leaders, and platform architects shipping AI-native systems. Real practitioners, real infrastructure decisions — no fluff.
+        </p>
+        <p className="mt-4 text-sm/7 font-medium text-gray-400 dark:text-gray-500">
+          Coming soon.
         </p>
       </div>
     </CenteredPageLayout>

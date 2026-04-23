@@ -1,23 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { GATED_LESSON_SLUGS } from "@/config/content-visibility";
 
 const UTM_KEYS = [
   "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
   "gclid", "fbclid", "ref", "ref_src", "mc_cid", "mc_eid",
 ];
 
-/** Lesson slugs that require WIP access */
-const GATED_LESSON_SLUGS = new Set([
-  "what-is-mcp", "mcp-architecture", "transport-layers", "tools-resources-prompts",
-  "server-setup-typescript", "server-setup-python", "implementing-tools", "resource-providers",
-  "security-basics", "error-handling", "observability-tracing", "testing-strategies",
-  "deployment-options", "multi-server-orchestration", "custom-transports",
-  "enterprise-integration", "future-of-mcp",
-]);
+const GATED_SET = new Set<string>(GATED_LESSON_SLUGS);
 
 function isGatedRoute(pathname: string): boolean {
   // Gate individual lesson pages
   const slug = pathname.replace(/^\//, "").split("/")[0];
-  if (GATED_LESSON_SLUGS.has(slug)) return true;
+  if (GATED_SET.has(slug)) return true;
   return false;
 }
 

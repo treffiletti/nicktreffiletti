@@ -32,7 +32,10 @@ export default function ResourcesPage() {
       </p>
       <div className="mt-16 pb-32">
         <p className="text-sm/7 text-gray-500 dark:text-gray-400">
-          Curated list in progress — coming soon.
+          Tools, libraries, reference architectures, and documentation for MCP development, API design, and AI systems integration. Updated as the ecosystem evolves.
+        </p>
+        <p className="mt-4 text-sm/7 font-medium text-gray-400 dark:text-gray-500">
+          Coming soon.
         </p>
       </div>
     </CenteredPageLayout>
