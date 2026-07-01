@@ -1,0 +1,21 @@
+---
+title: 'Putting an MCP Server in Front of a Regulated API? Identity Breaks First.'
+publishedAt: '2026-07-01'
+summary: 'The first thing that breaks isn't the model, it's identity. Four things I keep watching teams underestimate when they put an MCP server in front of a regulated API.'
+image: '/generated/hero/mcp-regulated-api-identity.png'
+---
+Everyone's racing to wrap their APIs in an MCP server so an AI agent can call them. Cool. But in a regulated enterprise, the first thing that breaks isn't the model. **It's identity.** And almost nobody's talking about it.
+
+I've spent the last couple years deep in enterprise API platform work. Gateways, OAuth, governance, all the unglamorous plumbing nobody posts about. Here's what I keep watching teams underestimate when they put an MCP server in front of a real, regulated API.
+
+**Whose identity is actually calling?** Your API expects a user with scopes, or a service with mTLS. An LLM is neither. Hand the MCP server one fat service account and you just collapsed every user's permissions into one. That's the classic confused deputy problem, except now there's a chatbot driving. The real question was never "can the model call the API." It's on whose behalf, with what scopes, and who signed off.
+
+**Your PII walks right into the context window.** The second a tool returns a customer record, that data is in the model's context. And probably your logs. Maybe a prompt cache. Maybe a third party. In a regulated shop that's not a feature request, that's an incident. Redact at the tool boundary, not after.
+
+**Your audit trail gets murky fast.** "Who did what" is table stakes for compliance. When an agent chains five tool calls on its own, you need the intent, the actual calls, and the human in the loop captured. Otherwise you can't answer the regulator six months from now.
+
+**Writes plus non-determinism is where it gets scary.** A GET is forgiving. An agent that can POST to a system of record off a probabilistic plan will, eventually, do something confidently wrong. Guardrails, confirmation steps, idempotency. Not optional.
+
+Here's where I keep landing: an MCP server isn't a thin wrapper around your API. **It's a new trust boundary.** Give it the same authN, authZ, scoping, redaction, and observability you'd put on any gateway. Treat it like "just expose the tools" and you're building next year's audit findings.
+
+If you're standing up MCP against real enterprise APIs, I'd genuinely like to hear how you're handling identity. It's the part nobody's solved cleanly yet.
