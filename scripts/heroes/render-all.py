@@ -33,7 +33,7 @@ with sync_playwright() as p:
     for html in htmls:
         slug = pathlib.Path(html).stem
         page.goto(pathlib.Path(html).resolve().as_uri(), wait_until="networkidle")
-        page.wait_for_timeout(200)
+        page.wait_for_timeout(600)  # let embedded Geist webfont load
         el = page.query_selector(".hero")
         out = OUT_DIR / f"{slug}.png"
         el.screenshot(path=str(out))
