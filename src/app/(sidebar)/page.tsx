@@ -65,9 +65,8 @@ export default async function Page() {
                 <span className="font-thin opacity-70 ">SERVER:</span>
                 </p>
                 <p className="font-orbitron text-xl sm:text-2xl md:text-3xl text-gray-950 dark:text-white tracking-[0.2em] uppercase">
-                <span className="font-thin">From Zer</span>
-                <span className="font-thin inline-block scale-125 px-1 text-cyan-500 dark:text-cyan-400">🄍</span>{" "}
-                <span className="font-black bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent">to Scale</span>
+                  <span className="font-thin">From Zero </span>
+                  <span className="font-black bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent">to Scale</span>
                 </p>
               <h1 className="sr-only">Course overview</h1>
               <p className="mt-7 max-w-lg text-base/7 text-pretty text-gray-600 dark:text-gray-400">

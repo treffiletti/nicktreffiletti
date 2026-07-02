@@ -1,9 +1,10 @@
 import createMDX from "@next/mdx";
+import remarkFrontmatter from "remark-frontmatter";
 
 const withMDX = createMDX({
   extension: /\.mdx?$/,
   options: {
-    remarkPlugins: [],
+    remarkPlugins: [remarkFrontmatter],
     rehypePlugins: [],
   },
 });
@@ -13,7 +14,6 @@ const nextConfig = {
   pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx"],
   images: {
     remotePatterns: [
-      new URL("https://assets.tailwindcss.com/templates/compass/**"),
       {
         protocol: "https",
         hostname: "images.unsplash.com",

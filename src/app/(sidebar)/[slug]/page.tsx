@@ -20,8 +20,9 @@ export async function generateMetadata({
   let lesson = await getLesson((await params).slug);
 
   return {
-    title: `${lesson?.title} - Compass`,
+    title: `${lesson?.title} - Nick Treffiletti`,
     description: lesson?.description,
+    robots: { index: false, follow: false },
   };
 }
 
@@ -55,11 +56,11 @@ export default async function Page({
     >
       <div className="mx-auto max-w-7xl">
         <div className="-mx-2 sm:-mx-4">
-          {lesson.video && (
+          {lesson.video?.url && (
             <Video
               id="video"
               src={lesson.video.url}
-              poster={lesson.video.thumbnail}
+              poster={lesson.video.thumbnail || undefined}
             />
           )}
         </div>
@@ -77,9 +78,9 @@ export default async function Page({
                 />
               ) : (
                 <NextPageLink
-                  title="Interviews"
-                  description="Explore interviews with industry experts and thought leaders."
-                  href="/interviews"
+                  title="Read the Blog"
+                  description="Deeper dives on MCP, API governance, and platform engineering from the field."
+                  href="/blog"
                 />
               )}
             </div>
